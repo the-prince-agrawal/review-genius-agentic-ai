@@ -1,3 +1,6 @@
 spring:
   application:
     name: review-genius-agent
+
+agent:
+  maxSteps: 5
