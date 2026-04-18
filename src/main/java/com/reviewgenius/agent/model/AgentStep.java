@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AgentStep {
-    private String thought;
-    private String action;
-    private String observation;
+  private String thought;
+  private String action;
+  private String observation;
 }

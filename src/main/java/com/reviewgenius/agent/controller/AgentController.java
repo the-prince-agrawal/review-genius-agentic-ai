@@ -11,14 +11,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/agent")
 public class AgentController {
 
-    private final AgentOrchestrator orchestrator;
+  private final AgentOrchestrator orchestrator;
 
-    public AgentController(AgentOrchestrator orchestrator) {
-        this.orchestrator = orchestrator;
-    }
+  public AgentController(AgentOrchestrator orchestrator) {
+    this.orchestrator = orchestrator;
+  }
 
-    @GetMapping("/run")
-    public ResponseEntity<String> run(@RequestParam String input) {
-        return ResponseEntity.ok(orchestrator.runAgent(input));
-    }
+  @GetMapping("/run")
+  public ResponseEntity<String> run(@RequestParam String input) {
+    return ResponseEntity.ok(orchestrator.runAgent(input));
+  }
 }
