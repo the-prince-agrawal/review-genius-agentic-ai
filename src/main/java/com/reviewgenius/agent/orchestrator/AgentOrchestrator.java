@@ -1,6 +1,8 @@
 package com.reviewgenius.agent.orchestrator;
 
 import com.reviewgenius.agent.model.AgentContext;
+import com.reviewgenius.agent.service.GitHubService;
+import com.reviewgenius.agent.util.DiffParserUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -12,12 +14,15 @@ public class AgentOrchestrator {
   @Value("${agent.maxSteps:5}")
   private int maxSteps;
 
+  private final GitHubService gitHubService;
+
+  public AgentOrchestrator(GitHubService gitHubService) {
+    this.gitHubService = gitHubService;
+  }
+
   public String runAgent(String input) {
 
-    AgentContext context = AgentContext.builder()
-            .steps(new ArrayList<>())
-            .input(input)
-            .completed(false).build();
+    AgentContext context = AgentContext.builder().steps(new ArrayList<>()).input(input).completed(false).build();
 
     for (int i = 0; i < maxSteps; i++) {
 
@@ -38,7 +43,8 @@ public class AgentOrchestrator {
   private String think(AgentContext context) {
 
     if (context.getSteps().isEmpty()) {
-      return "Need to fetch code";
+      String diff = gitHubService.fetchPullRequestDiff();
+      return DiffParserUtil.parse(diff);
     } else if (context.getSteps().size() == 1) {
       return "Analyze code";
     } else {
