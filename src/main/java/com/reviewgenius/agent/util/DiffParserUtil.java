@@ -63,10 +63,7 @@ public class DiffParserUtil {
     String fullPath = parts[2]; // a/src/...
 
     // Fix path
-    String cleaned = fullPath.replace("a/", "");
-    cleaned = cleaned.replace("javcom", "java/com");
-
-    return cleaned;
+    return fullPath.replaceFirst("^a/", "");
   }
 
   private static String format(List<DiffFile> files) {

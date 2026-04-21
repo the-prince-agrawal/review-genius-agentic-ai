@@ -13,7 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class AgentContext {
-  private String input;
+  private ReviewRequestDto inputDto;
   private List<String> steps = new ArrayList<>();
+  private String rawDiff;
+  private String parsedDiff;
+  private String analysis;
+  private String review;
   private boolean completed;
 }

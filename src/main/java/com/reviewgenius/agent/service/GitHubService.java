@@ -1,38 +1,38 @@
 package com.reviewgenius.agent.service;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import static com.reviewgenius.agent.config.CacheConfig.LOGS_CACHE;
 
 @Service
 public class GitHubService {
-
-  @Value("${github.owner}")
-  private String owner;
-
-  @Value("${github.repo}")
-  private String repo;
-
-  @Value("${github.prNumber}")
-  private Integer prNumber;
-
   @Value("${github.token}")
   private String githubToken;
 
   private final RestTemplate restTemplate = new RestTemplate();
 
-  // TODO: Implement Caching here
-  public String fetchPullRequestDiff() {
-    // TODO: Implement proper url generation logic here
-    String url = "https://api.github.com/repos/" + owner + "/" + repo + "/pulls/" + prNumber;
+  @Cacheable(value = LOGS_CACHE, key = "#input")
+  public String fetchPullRequestDiff(String input) {
+    HttpEntity<Void> entity = getHeader();
+    String diffUrl = getDiffUrl(input);
+    ResponseEntity<String> response = restTemplate.exchange(diffUrl, HttpMethod.GET, entity, String.class);
+    return response.getBody();
+  }
+
+  private HttpEntity<Void> getHeader() {
     HttpHeaders headers = new HttpHeaders();
     headers.setBearerAuth(githubToken);
-    headers.setAccept(List.of(MediaType.valueOf("application/vnd.github.v3.diff")));
-    HttpEntity<Void> entity = new HttpEntity<>(headers);
-    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-    return response.getBody();
+    return new HttpEntity<>(headers);
+  }
+
+  private static String getDiffUrl(String input) {
+    return input.endsWith("/") ? input.substring(0, input.length() - 1) + ".diff" : input + ".diff";
   }
 }

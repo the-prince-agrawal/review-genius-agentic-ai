@@ -54,5 +54,27 @@
         <setting id="org.eclipse.jdt.core.formatter.keep_simple_if_on_one_line" value="false"/>
         <setting id="org.eclipse.jdt.core.formatter.keep_else_statement_on_same_line" value="false"/>
 
+        <!-- FORCE WRAPPING FOR ANNOTATIONS -->
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_annotations_on_field" value="16"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_annotation" value="16"/>
+
+        <!-- WRAP LONG LINES -->
+        <setting id="org.eclipse.jdt.core.formatter.wrap_before_assignment_operator" value="true"/>
+
+        <!-- FORCE WRAP METHOD CHAIN -->
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_selector_in_method_invocation" value="16"/>
+
+        <!-- FORCE WRAP ARGUMENTS -->
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation" value="16"/>
+
+        <!-- FORCE WRAP ANNOTATIONS -->
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_annotations_on_field" value="16"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_annotation" value="16"/>
+
+        <!-- DO NOT COLLAPSE -->
+        <setting id="org.eclipse.jdt.core.formatter.join_wrapped_lines" value="false"/>
+
+        <!-- WRAP BEFORE DOT (IMPORTANT) -->
+        <setting id="org.eclipse.jdt.core.formatter.wrap_before_dot" value="true"/>
     </profile>
 </profiles>
