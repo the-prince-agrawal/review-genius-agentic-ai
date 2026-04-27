@@ -1,41 +1,22 @@
 package com.reviewgenius.agent.core.act;
 
+import com.reviewgenius.agent.core.act.registry.ActionHandlerRegistry;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
-import com.reviewgenius.agent.service.GitHubService;
-import com.reviewgenius.agent.util.DiffParserUtil;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import static com.reviewgenius.agent.core.act.ActionResultStatus.FAILURE;
+
 @Service
+@AllArgsConstructor
 public class ActionExecutor {
-
-  private final GitHubService gitHubService;
-
-  public ActionExecutor(GitHubService gitHubService) {
-    this.gitHubService = gitHubService;
-  }
-
-  public String act(ActionType actionType, AgentContext context) {
-    switch (actionType) {
-      case FETCH_PR :
-        String diff = gitHubService.fetchPullRequestDiff(context.getInputDto().getPrURL());
-        context.setRawDiff(diff);
-        return "PR fetched";
-
-      case PARSE_DIFF :
-        String parsed = DiffParserUtil.parse(context.getRawDiff());
-        context.setParsedDiff(parsed);
-        return "Diff parsed";
-
-      case ANALYZE_CODE :
-        return "LLM analysis (simulated)";
-
-      case GENERATE_REVIEW :
-        context.setReview("Review generated (simulated)");
-        return "Review ready";
-
-      default :
-        return "No action";
+  private final ActionHandlerRegistry registry;
+  public ActionResult act(ActionType actionType, AgentContext context) {
+    ActionHandler handler = registry.getActionHandler(actionType);
+    if (handler == null) {
+      return new ActionResult(FAILURE, "No handler found", null);
     }
+    return handler.execute(context);
   }
 }

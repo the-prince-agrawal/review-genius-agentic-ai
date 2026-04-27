@@ -1,6 +1,7 @@
 package com.reviewgenius.agent.orchestrator;
 
 import com.reviewgenius.agent.core.act.ActionExecutor;
+import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.core.observe.ObservationHandler;
 import com.reviewgenius.agent.core.think.ThinkEngine;
 import com.reviewgenius.agent.enums.ActionType;
@@ -16,7 +17,6 @@ public class AgentOrchestrator {
 
   @Value("${agent.maxSteps:5}")
   private int maxSteps;
-
   private final ThinkEngine thinkEngine;
   private final ActionExecutor actionExecutor;
   private final ObservationHandler observationHandler;
@@ -38,9 +38,10 @@ public class AgentOrchestrator {
 
     for (int i = 0; i < maxSteps; i++) {
       ActionType thought = thinkEngine.think(context);
-      String action = actionExecutor.act(thought, context);
+      ActionResult action = actionExecutor.act(thought, context);
       String observation = observationHandler.observe(thought, context);
-      context.getSteps().add("Thought: " + thought + " | Action: " + action + " | Observation: " + observation);
+      context.getSteps()
+          .add("Thought: " + thought + " | Action: " + action.getMessage() + " | Observation: " + observation);
       if (context.isCompleted()) {
         break;
       }
