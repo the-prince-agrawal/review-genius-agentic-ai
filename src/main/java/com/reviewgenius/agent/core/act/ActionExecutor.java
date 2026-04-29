@@ -6,8 +6,6 @@ import com.reviewgenius.agent.model.AgentContext;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import static com.reviewgenius.agent.core.act.ActionResultStatus.FAILURE;
-
 @Service
 @AllArgsConstructor
 public class ActionExecutor {
@@ -15,7 +13,7 @@ public class ActionExecutor {
   public ActionResult act(ActionType actionType, AgentContext context) {
     ActionHandler handler = registry.getActionHandler(actionType);
     if (handler == null) {
-      return new ActionResult(FAILURE, "No handler found", null);
+      return ActionResult.failure("No handler found", "No handler mapped for " + actionType);
     }
     return handler.execute(context);
   }

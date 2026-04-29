@@ -2,11 +2,13 @@ package com.reviewgenius.agent.core.act.handler;
 
 import com.reviewgenius.agent.core.act.ActionHandler;
 import com.reviewgenius.agent.core.act.ActionResult;
+import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.service.GitHubService;
 import org.springframework.stereotype.Service;
 
 import static com.reviewgenius.agent.core.act.ActionResultStatus.SUCCESS;
+import static com.reviewgenius.agent.enums.ActionType.FETCH_PR;
 
 @Service
 public class FetchPRHandler implements ActionHandler {
@@ -23,6 +25,11 @@ public class FetchPRHandler implements ActionHandler {
         context.getInputDto().getPrURL());
     context.setRawDiff(diff);
 
-    return new ActionResult(SUCCESS, "PR fetched", diff);
+    return new ActionResult(SUCCESS, "PR fetched", diff, null);
+  }
+
+  @Override
+  public ActionType getType() {
+    return FETCH_PR;
   }
 }

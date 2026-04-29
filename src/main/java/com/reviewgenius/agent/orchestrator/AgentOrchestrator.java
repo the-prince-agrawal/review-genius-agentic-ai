@@ -37,11 +37,11 @@ public class AgentOrchestrator {
         .build();
 
     for (int i = 0; i < maxSteps; i++) {
-      ActionType thought = thinkEngine.think(context);
-      ActionResult action = actionExecutor.act(thought, context);
-      String observation = observationHandler.observe(thought, context);
+      ActionType actionType = thinkEngine.think(context);
+      ActionResult action = actionExecutor.act(actionType, context);
+      String observation = observationHandler.observe(actionType, context);
       context.getSteps()
-          .add("Thought: " + thought + " | Action: " + action.getMessage() + " | Observation: " + observation);
+          .add("Thought: " + actionType + " | Action: " + action.getMessage() + " | Observation: " + observation);
       if (context.isCompleted()) {
         break;
       }
