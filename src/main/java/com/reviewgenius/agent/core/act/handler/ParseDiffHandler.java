@@ -16,7 +16,7 @@ public class ParseDiffHandler implements ActionHandler {
   public ActionResult execute(AgentContext context) {
     String parsed = DiffParserUtil.parse(context.getRawDiff());
     context.setParsedDiff(parsed);
-    return new ActionResult(SUCCESS, "Diff parsed", parsed, null);
+    return ActionResult.success("Diff parsed", parsed);
   }
 
   @Override

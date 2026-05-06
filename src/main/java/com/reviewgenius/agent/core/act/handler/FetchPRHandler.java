@@ -24,8 +24,7 @@ public class FetchPRHandler implements ActionHandler {
     String diff = gitHubService.fetchPullRequestDiff(
         context.getInputDto().getPrURL());
     context.setRawDiff(diff);
-
-    return new ActionResult(SUCCESS, "PR fetched", diff, null);
+    return ActionResult.success("PR fetched", diff);
   }
 
   @Override

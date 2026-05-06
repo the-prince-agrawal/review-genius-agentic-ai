@@ -4,18 +4,60 @@ import com.reviewgenius.agent.core.act.ActionHandler;
 import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
+import com.reviewgenius.agent.model.Issue;
 import org.springframework.stereotype.Service;
 
-import static com.reviewgenius.agent.core.act.ActionResultStatus.SUCCESS;
+import java.util.List;
+
+import static com.reviewgenius.agent.Constants.NEW_LINE;
+import static com.reviewgenius.agent.Constants.REVIEW_GENERATED_SUCCESS_MESSAGE;
 import static com.reviewgenius.agent.enums.ActionType.GENERATE_REVIEW;
 
 @Service
 public class GenerateReviewHandler implements ActionHandler {
+  private static final String DEFAULT_REVIEW_MESSAGE = """
+      ✅ Code Review Completed
+
+      No major issues were identified in the code changes.
+      """;
   @Override
   public ActionResult execute(AgentContext context) {
-    String review = "Generated review based on analysis and parsed diff.";
+    List<Issue> issues = context.getIssues();
+    if (issues == null || issues.isEmpty()) {
+      context.setReview(DEFAULT_REVIEW_MESSAGE);
+      context.setCompleted(true);
+      return ActionResult.success(REVIEW_GENERATED_SUCCESS_MESSAGE, DEFAULT_REVIEW_MESSAGE);
+    }
+
+    String review = getFormattedReview(issues);
     context.setReview(review);
-    return new ActionResult(SUCCESS, "Review generated", review, null);
+    context.setCompleted(true);
+    return ActionResult.success(REVIEW_GENERATED_SUCCESS_MESSAGE, review);
+  }
+
+  private String getFormattedReview(List<Issue> issues) {
+    StringBuilder reviewBuilder = new StringBuilder();
+    reviewBuilder.append("🔍 CODE REVIEW SUMMARY\n\n");
+    for (Issue issue : issues) {
+      reviewBuilder.append("File       : ")
+          .append(issue.getFileName())
+          .append(NEW_LINE);
+      reviewBuilder.append("Line       : ")
+          .append(issue.getLineNumber())
+          .append(NEW_LINE);
+      reviewBuilder.append("Severity   : ")
+          .append(issue.getSeverity())
+          .append(NEW_LINE);
+      reviewBuilder.append("Issue      : ")
+          .append(issue.getDescription())
+          .append(NEW_LINE);
+      reviewBuilder.append("Suggestion : ")
+          .append(issue.getSuggestion())
+          .append(NEW_LINE);
+      reviewBuilder.append(
+          "\n----------------------------------------\n\n");
+    }
+    return reviewBuilder.toString();
   }
 
   @Override

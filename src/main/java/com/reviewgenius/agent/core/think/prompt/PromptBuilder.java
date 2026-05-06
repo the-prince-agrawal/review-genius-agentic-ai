@@ -21,7 +21,10 @@ public class PromptBuilder {
         - Focus on bugs, performance, security, and bad practices
         - Ignore formatting and minor style issues
         - Be precise and concise
-        - Do NOT add any explanation outside JSON
+        - Return ONLY raw JSON
+        - Do NOT wrap response in markdown
+        - Do NOT use ```json
+        - Do NOT add explanation text
 
         Return ONLY valid JSON array:
         [

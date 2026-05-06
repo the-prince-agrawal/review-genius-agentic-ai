@@ -3,6 +3,7 @@ package com.reviewgenius.agent.core.think;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import static com.reviewgenius.agent.enums.ActionType.*;
 
