@@ -2,43 +2,24 @@ package com.reviewgenius.agent.core.think.prompt;
 
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+
 @Service
 public class PromptBuilder {
 
-  public String buildCodeReviewPrompt(String diff, String reviewType) {
+  public String buildCodeReviewPrompt(String diff, String reviewType, PromptVersion version) {
     if (diff == null || diff.isBlank()) {
       return "No code diff provided.";
     }
-    return """
-        You are a senior software engineer doing a strict code review.
+    PromptTemplate template = getPromptTemplate(version);
+    return template.getTemplate()
+        .formatted(reviewType, diff);
+  }
 
-        Analyze the following code diff and identify issues.
-
-        Focus Area:
-        %s
-
-        Rules:
-        - Focus on bugs, performance, security, and bad practices
-        - Ignore formatting and minor style issues
-        - Be precise and concise
-        - Return ONLY raw JSON
-        - Do NOT wrap response in markdown
-        - Do NOT use ```json
-        - Do NOT add explanation text
-
-        Return ONLY valid JSON array:
-        [
-          {
-            "fileName": "",
-            "lineNumber": 0,
-            "severity": "LOW|MEDIUM|HIGH",
-            "description": "",
-            "suggestion": ""
-          }
-        ]
-
-        Code Diff:
-        %s
-        """.formatted(reviewType, diff);
+  private PromptTemplate getPromptTemplate(PromptVersion version) {
+    return Arrays.stream(PromptTemplate.values())
+        .filter(template -> template.getVersion() == version)
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Unsupported prompt version: " + version));
   }
 }

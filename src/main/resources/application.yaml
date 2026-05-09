@@ -9,6 +9,11 @@ spring:
           model: gpt-4o-mini
           temperature: 0.2
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{correlationId}] %-5level %logger{36} - %msg%n"
+    #console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{correlationId}] %-5level %logger - %msg%n"
+
 #  ai:
 #    ollama:
 #      base-url: http://localhost:11434

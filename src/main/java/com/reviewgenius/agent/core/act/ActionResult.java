@@ -1,21 +1,49 @@
 package com.reviewgenius.agent.core.act;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
 @Data
-public class ActionResult {
-  private ActionResultStatus status;
-  private String message;
-  private Object data;
-  String error;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ActionResult<T> {
 
-  public static ActionResult success(String message, Object data) {
-    return new ActionResult(ActionResultStatus.SUCCESS, message, data, null);
+  private ActionResultStatus status;
+
+  private String message;
+
+  private String errorMessage;
+
+  private Exception exception;
+
+  private boolean recoverable;
+
+  private T metadata;
+
+  public static <T> ActionResult<T> success(
+      String message,
+      T metadata) {
+
+    return ActionResult.<T>builder()
+        .status(ActionResultStatus.SUCCESS)
+        .message(message)
+        .metadata(metadata)
+        .recoverable(false)
+        .build();
   }
 
-  public static ActionResult failure(String message, String error) {
-    return new ActionResult(ActionResultStatus.FAILURE, message, null, error);
+  public static <T> ActionResult<T> failure(
+      String message,
+      String errorMessage) {
+
+    return ActionResult.<T>builder()
+        .status(ActionResultStatus.FAILURE)
+        .message(message)
+        .errorMessage(errorMessage)
+        .recoverable(false)
+        .build();
   }
 }

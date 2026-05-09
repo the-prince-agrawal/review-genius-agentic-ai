@@ -1,5 +1,6 @@
 package com.reviewgenius.agent.model;
 
+import com.reviewgenius.agent.observability.execution.ActionExecutionHistory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +16,6 @@ import java.util.Map;
 @Builder
 public class AgentContext {
   private ReviewRequestDto inputDto;
-  private List<String> steps = new ArrayList<>();
   List<Issue> issues;
   Map<String, Object> metadata;
   private String rawDiff;
@@ -23,4 +23,6 @@ public class AgentContext {
   private String analysis;
   private String review;
   private boolean completed;
+  private String correlationId;
+  private List<ActionExecutionHistory> executionHistories;
 }

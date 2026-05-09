@@ -6,8 +6,10 @@ import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.Issue;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.reviewgenius.agent.Constants.NEW_LINE;
 import static com.reviewgenius.agent.Constants.REVIEW_GENERATED_SUCCESS_MESSAGE;
@@ -23,16 +25,24 @@ public class GenerateReviewHandler implements ActionHandler {
   @Override
   public ActionResult execute(AgentContext context) {
     List<Issue> issues = context.getIssues();
-    if (issues == null || issues.isEmpty()) {
+    if (CollectionUtils.isEmpty(issues)) {
       context.setReview(DEFAULT_REVIEW_MESSAGE);
       context.setCompleted(true);
-      return ActionResult.success(REVIEW_GENERATED_SUCCESS_MESSAGE, DEFAULT_REVIEW_MESSAGE);
+      return getSuccessResponse(DEFAULT_REVIEW_MESSAGE, 0);
     }
 
     String review = getFormattedReview(issues);
     context.setReview(review);
     context.setCompleted(true);
-    return ActionResult.success(REVIEW_GENERATED_SUCCESS_MESSAGE, review);
+    return getSuccessResponse(review, issues.size());
+  }
+
+  private static ActionResult getSuccessResponse(String reviewMessage, int issuesCount) {
+    return ActionResult.success(
+        REVIEW_GENERATED_SUCCESS_MESSAGE,
+        Map.of(
+            "review", reviewMessage,
+            "issueCount", issuesCount));
   }
 
   private String getFormattedReview(List<Issue> issues) {

@@ -4,6 +4,7 @@ import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.core.act.ActionResultStatus;
 import com.reviewgenius.agent.core.think.LLMClient;
 import com.reviewgenius.agent.core.think.prompt.PromptBuilder;
+import com.reviewgenius.agent.core.think.prompt.PromptVersion;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.ReviewRequestDto;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.when;
@@ -32,7 +34,7 @@ class AnalyzeCodeHandlerTest {
   @Test
   void testExecute() {
     AgentContext context = getAgentContext();
-    doCallRealMethod().when(promptBuilder).buildCodeReviewPrompt(anyString(), anyString());
+    doCallRealMethod().when(promptBuilder).buildCodeReviewPrompt(anyString(), anyString(), any(PromptVersion.class));
     when(llmClient.getResponse(anyString())).thenReturn(getAnalysisResult());
     ActionResult actionResult = analyzeCodeHandler.execute(context);
     assertEquals(ActionResultStatus.SUCCESS, actionResult.getStatus());

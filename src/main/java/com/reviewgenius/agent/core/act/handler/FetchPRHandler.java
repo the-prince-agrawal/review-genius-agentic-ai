@@ -5,12 +5,16 @@ import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.service.GitHubService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import static com.reviewgenius.agent.core.act.ActionResultStatus.SUCCESS;
+import java.util.Map;
+
 import static com.reviewgenius.agent.enums.ActionType.FETCH_PR;
 
 @Service
+@Slf4j
 public class FetchPRHandler implements ActionHandler {
 
   private final GitHubService gitHubService;
@@ -20,11 +24,26 @@ public class FetchPRHandler implements ActionHandler {
   }
 
   @Override
-  public ActionResult execute(AgentContext context) {
-    String diff = gitHubService.fetchPullRequestDiff(
-        context.getInputDto().getPrURL());
-    context.setRawDiff(diff);
-    return ActionResult.success("PR fetched", diff);
+  public ActionResult<String> execute(AgentContext context) {
+    String prUrl = context.getInputDto().getPrURL();
+
+    try {
+      String diff = gitHubService.fetchPullRequestDiff(prUrl);
+      if (!StringUtils.hasText(diff)) {
+        log.error("Received empty diff from GitHub");
+        return ActionResult.failure(
+            "Failed to fetch PR",
+            "GitHub returned empty diff");
+      }
+
+      context.setRawDiff(diff);
+      return ActionResult.success("PR fetched successfully", diff);
+    } catch (Exception ex) {
+      log.error("Error while fetching PR diff", ex);
+      return ActionResult.failure(
+          "Failed to fetch PR",
+          ex.getMessage());
+    }
   }
 
   @Override

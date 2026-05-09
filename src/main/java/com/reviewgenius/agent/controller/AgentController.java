@@ -1,6 +1,7 @@
 package com.reviewgenius.agent.controller;
 
 import com.reviewgenius.agent.model.ReviewRequestDto;
+import com.reviewgenius.agent.observability.execution.AgentExecutionResult;
 import com.reviewgenius.agent.orchestrator.AgentOrchestrator;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -15,7 +16,7 @@ public class AgentController {
   private final AgentOrchestrator orchestrator;
 
   @PostMapping("/review")
-  public ResponseEntity<String> reviewPR(@Valid @RequestBody ReviewRequestDto input) {
+  public ResponseEntity<AgentExecutionResult> reviewPR(@Valid @RequestBody ReviewRequestDto input) {
     return ResponseEntity.ok(orchestrator.runAgent(input));
   }
 }

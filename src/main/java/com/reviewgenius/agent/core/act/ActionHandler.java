@@ -4,7 +4,7 @@ import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 
 public interface ActionHandler {
-  ActionResult execute(AgentContext context);
+  ActionResult<?> execute(AgentContext context);
 
   ActionType getType();
 }
