@@ -6,7 +6,6 @@ import com.reviewgenius.agent.core.act.ActionResultStatus;
 import com.reviewgenius.agent.core.observe.ObservationHandler;
 import com.reviewgenius.agent.core.think.ThinkEngine;
 import com.reviewgenius.agent.enums.ActionType;
-import com.reviewgenius.agent.enums.ObservationStatus;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.ReviewRequestDto;
 import com.reviewgenius.agent.observability.execution.AgentExecutionResult;
@@ -34,39 +33,24 @@ public class AgentOrchestrator {
     this.observationHandler = observationHandler;
   }
 
-  public AgentExecutionResult runAgent(ReviewRequestDto input) {
+  public AgentExecutionResult runAgent(ReviewRequestDto input, boolean debug) {
     long startTime = System.currentTimeMillis();
     AgentContext context = buildContext(input);
     executeSteps(context);
     long totalExecutionTimeMs = System.currentTimeMillis() - startTime;
-    return buildExecutionResult(context, totalExecutionTimeMs);
+    return buildExecutionResult(context, totalExecutionTimeMs, debug);
   }
 
   private void executeSteps(AgentContext context) {
     for (int step = 0; step < maxSteps; step++) {
       ActionType actionType = thinkEngine.think(context);
       ActionResult<?> result = actionExecutor.act(actionType, context);
-      ObservationStatus observation = observationHandler.observe(actionType, context);
-      logStep(context, step, actionType, result, observation);
-      if (result.getStatus() == ActionResultStatus.FAILURE) {
-        // context.getSteps().add("Execution stopped due to failure at step " + (step + 1));
+      // ObservationStatus observation = observationHandler.observe(actionType, context);
+      if (result.getStatus() == ActionResultStatus.FAILURE)
         break;
-      }
-      if (context.isCompleted()) {
+      if (context.isCompleted())
         break;
-      }
     }
-  }
-
-  private static void logStep(AgentContext context, int step, ActionType actionType, ActionResult result,
-      ObservationStatus observation) {
-    String stepData = String.format(
-        "Step %d | Thought=%s | Action=%s | Status=%s",
-        step + 1,
-        actionType,
-        result.getMessage(),
-        observation);
-    log.debug(stepData);
   }
 
   private static AgentContext buildContext(ReviewRequestDto input) {
@@ -78,10 +62,10 @@ public class AgentOrchestrator {
         .build();
   }
 
-  private AgentExecutionResult buildExecutionResult(AgentContext context, long totalExecutionTimeMs) {
+  private AgentExecutionResult buildExecutionResult(AgentContext context, long totalExecutionTimeMs, boolean debug) {
     return AgentExecutionResult.builder()
         .finalReview(context.getReview())
-        .executionHistories(context.getExecutionHistories())
+        .executionHistories(debug ? context.getExecutionHistories() : null)
         .overallStatus(getOverallStatus(context))
         .totalExecutionTimeMs(totalExecutionTimeMs)
         .build();

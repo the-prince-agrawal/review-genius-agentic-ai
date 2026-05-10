@@ -16,7 +16,9 @@ public class AgentController {
   private final AgentOrchestrator orchestrator;
 
   @PostMapping("/review")
-  public ResponseEntity<AgentExecutionResult> reviewPR(@Valid @RequestBody ReviewRequestDto input) {
-    return ResponseEntity.ok(orchestrator.runAgent(input));
+  public ResponseEntity<AgentExecutionResult> reviewPR(
+      @Valid @RequestBody ReviewRequestDto input,
+      @RequestParam(defaultValue = "false") boolean debug) {
+    return ResponseEntity.ok(orchestrator.runAgent(input, debug));
   }
 }

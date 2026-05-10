@@ -5,7 +5,6 @@ import com.reviewgenius.agent.enums.ActionType;
 import lombok.*;
 
 import java.time.Instant;
-import java.util.Map;
 
 @Getter
 @Setter

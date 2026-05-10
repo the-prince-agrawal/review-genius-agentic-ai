@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import static com.reviewgenius.agent.core.act.ActionResultStatus.SUCCESS;
 import static com.reviewgenius.agent.enums.ActionType.PARSE_DIFF;
 
 @Service
@@ -18,11 +17,9 @@ public class ParseDiffHandler implements ActionHandler {
   @Override
   public ActionResult<String> execute(AgentContext context) {
     try {
-      log.info("Parsing GitHub diff");
       String parsedDiff = DiffParserUtil.parse(context.getRawDiff());
       validateParsedDiff(parsedDiff);
       context.setParsedDiff(parsedDiff);
-      log.info("Diff parsed successfully");
       return ActionResult.success("Diff parsed successfully", parsedDiff);
     } catch (Exception ex) {
       log.error("Error while parsing diff", ex);

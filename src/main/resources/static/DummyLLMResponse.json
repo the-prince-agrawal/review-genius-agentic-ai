@@ -1,0 +1,16 @@
+[
+  {
+    "fileName": "src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java",
+    "lineNumber": 10,
+    "severity": "MEDIUM",
+    "description": "Using ConcurrentMapCacheManager may not be suitable for high concurrency scenarios.",
+    "suggestion": "Consider using a more robust cache manager like EhCache or Redis for better performance under load."
+  },
+  {
+    "fileName": "src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java",
+    "lineNumber": 5,
+    "severity": "LOW",
+    "description": "Cacheable annotation may lead to cache stampede if not properly configured.",
+    "suggestion": "Ensure proper cache configuration and consider using cache locking mechanisms."
+  }
+]

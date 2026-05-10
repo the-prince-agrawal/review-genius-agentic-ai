@@ -8,20 +8,28 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.2
+  #  ai:
+  #    ollama:
+  #      base-url: http://localhost:11434
+  #      chat:
+  #        model: deepseek-r1:8b
+
+github:
+  token: ${LOG_INTELLIGENCE_GITHUB_ACCESS_TOKEN_FOR_PR_REVIEW}
 
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%X{correlationId}] %-5level %logger{36} - %msg%n"
-    #console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{correlationId}] %-5level %logger - %msg%n"
+  level:
+    org.springframework.web: WARN
+    org.apache.catalina: WARN
 
-#  ai:
-#    ollama:
-#      base-url: http://localhost:11434
-#      chat:
-#        model: deepseek-r1:8b
+
 
 agent:
   maxSteps: 5
-
-github:
-    token: ${LOG_INTELLIGENCE_GITHUB_ACCESS_TOKEN_FOR_PR_REVIEW}
+  llm:
+    client:
+      disabled: true
+  prompt:
+    version: REVIEW_V1

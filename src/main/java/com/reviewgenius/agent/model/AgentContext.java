@@ -1,12 +1,12 @@
 package com.reviewgenius.agent.model;
 
+import com.reviewgenius.agent.core.think.prompt.PromptVersion;
 import com.reviewgenius.agent.observability.execution.ActionExecutionHistory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,8 +21,9 @@ public class AgentContext {
   private String rawDiff;
   private String parsedDiff;
   private String analysis;
-  private String review;
+  private CodeReviewResponseDto review;
   private boolean completed;
   private String correlationId;
+  private PromptVersion promptVersion;
   private List<ActionExecutionHistory> executionHistories;
 }

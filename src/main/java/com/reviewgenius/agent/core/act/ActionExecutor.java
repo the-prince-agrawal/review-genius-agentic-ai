@@ -21,7 +21,6 @@ public class ActionExecutor {
   private final AgentLogger agentLogger;
 
   public ActionResult<?> act(ActionType actionType, AgentContext context) {
-
     ActionHandler handler = registry.getActionHandler(actionType);
     if (handler == null) {
       log.error("No handler registered for action: {}", actionType);
@@ -31,31 +30,26 @@ public class ActionExecutor {
     }
 
     Instant startedAt = Instant.now();
-    agentLogger.logStepStart(actionType, context);
+    agentLogger.logStepStart(actionType);
     ActionResult<?> result;
     try {
       result = handler.execute(context);
     } catch (Exception ex) {
-      agentLogger.logStepFailure(actionType, ex, context);
+      agentLogger.logStepFailure(actionType, ex);
       result = ActionResult.failure("Unexpected action execution failure", ex.getMessage());
     }
     Instant completedAt = Instant.now();
     addExecutionHistory(context, actionType, result, startedAt, completedAt);
-    agentLogger.logStepCompletion(actionType, result, Duration.between(startedAt, completedAt).toMillis(), context);
+    agentLogger.logStepCompletion(actionType, result, Duration.between(startedAt, completedAt).toMillis());
     return result;
   }
 
-  private static void addExecutionHistory(
-      AgentContext context,
-      ActionType actionType,
-      ActionResult<?> result,
-      Instant startedAt,
-      Instant completedAt) {
-
+  private static void addExecutionHistory(AgentContext context, ActionType actionType,
+      ActionResult<?> result, Instant startedAt, Instant completedAt) {
     long executionTimeMs = 0;
-
     if (startedAt != null && completedAt != null) {
       executionTimeMs = Duration.between(startedAt, completedAt).toMillis();
+      executionTimeMs = Math.max(executionTimeMs, 1);
     }
 
     ActionExecutionHistory history = ActionExecutionHistory.builder()

@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.lang.NonNull;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -16,8 +17,10 @@ import java.util.UUID;
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
   @Override
-  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-      FilterChain filterChain) throws ServletException, IOException {
+  protected void doFilterInternal(@NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response,
+      @NonNull FilterChain filterChain)
+      throws ServletException, IOException {
 
     String correlationId = request.getHeader(TraceConstants.CORRELATION_ID_HEADER);
     if (!StringUtils.hasText(correlationId)) {
@@ -30,7 +33,8 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
     try {
       filterChain.doFilter(request, response);
     } finally {
-      MDC.clear();
+      // MDC.clear();
+      MDC.remove(TraceConstants.CORRELATION_ID);
     }
   }
 }
