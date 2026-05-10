@@ -36,7 +36,7 @@ class AnalyzeCodeHandlerTest {
     AgentContext context = getAgentContext();
     doCallRealMethod().when(promptBuilder).buildCodeReviewPrompt(context);
     when(llmClient.getResponse(anyString())).thenReturn(getAnalysisResult());
-    ActionResult actionResult = analyzeCodeHandler.execute(context);
+    ActionResult<?> actionResult = analyzeCodeHandler.execute(context);
     assertEquals(ActionResultStatus.SUCCESS, actionResult.getStatus());
   }
 

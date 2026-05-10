@@ -3,7 +3,6 @@ package com.reviewgenius.agent.orchestrator;
 import com.reviewgenius.agent.core.act.ActionExecutor;
 import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.core.act.ActionResultStatus;
-import com.reviewgenius.agent.core.observe.ObservationHandler;
 import com.reviewgenius.agent.core.think.ThinkEngine;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
@@ -24,13 +23,10 @@ public class AgentOrchestrator {
   private int maxSteps;
   private final ThinkEngine thinkEngine;
   private final ActionExecutor actionExecutor;
-  private final ObservationHandler observationHandler;
 
-  public AgentOrchestrator(ThinkEngine thinkEngine, ActionExecutor actionExecutor,
-      ObservationHandler observationHandler) {
+  public AgentOrchestrator(ThinkEngine thinkEngine, ActionExecutor actionExecutor) {
     this.thinkEngine = thinkEngine;
     this.actionExecutor = actionExecutor;
-    this.observationHandler = observationHandler;
   }
 
   public AgentExecutionResult runAgent(ReviewRequestDto input, boolean debug) {
@@ -45,7 +41,6 @@ public class AgentOrchestrator {
     for (int step = 0; step < maxSteps; step++) {
       ActionType actionType = thinkEngine.think(context);
       ActionResult<?> result = actionExecutor.act(actionType, context);
-      // ObservationStatus observation = observationHandler.observe(actionType, context);
       if (result.getStatus() == ActionResultStatus.FAILURE)
         break;
       if (context.isCompleted())
