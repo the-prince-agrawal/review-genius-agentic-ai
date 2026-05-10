@@ -41,9 +41,7 @@ public class AgentOrchestrator {
     for (int step = 0; step < maxSteps; step++) {
       ActionType actionType = thinkEngine.think(context);
       ActionResult<?> result = actionExecutor.act(actionType, context);
-      if (result.getStatus() == ActionResultStatus.FAILURE)
-        break;
-      if (context.isCompleted())
+      if (result.getStatus() == ActionResultStatus.FAILURE || context.isCompleted())
         break;
     }
   }
@@ -69,8 +67,6 @@ public class AgentOrchestrator {
   private ActionResultStatus getOverallStatus(AgentContext context) {
     boolean hasFailure = context.getExecutionHistories()
         .stream().anyMatch(history -> history.getStatus() == ActionResultStatus.FAILURE);
-    return hasFailure
-        ? ActionResultStatus.FAILURE
-        : ActionResultStatus.SUCCESS;
+    return hasFailure ? ActionResultStatus.FAILURE : ActionResultStatus.SUCCESS;
   }
 }

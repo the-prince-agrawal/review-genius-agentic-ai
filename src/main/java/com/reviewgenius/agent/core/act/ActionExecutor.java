@@ -21,7 +21,9 @@ public class ActionExecutor {
   private final AgentLogger agentLogger;
 
   public ActionResult<?> act(ActionType actionType, AgentContext context) {
+
     ActionHandler handler = registry.getActionHandler(actionType);
+
     if (handler == null) {
       log.error("No handler registered for action: {}", actionType);
       ActionResult<?> failureResult = ActionResult.failure("No handler found", "No handler mapped for " + actionType);
@@ -38,10 +40,12 @@ public class ActionExecutor {
       agentLogger.logStepFailure(actionType, ex);
       result = ActionResult.failure("Unexpected action execution failure", ex.getMessage());
     }
+
     Instant completedAt = Instant.now();
     addExecutionHistory(context, actionType, result, startedAt, completedAt);
     agentLogger.logStepCompletion(actionType, result, Duration.between(startedAt, completedAt).toMillis());
     return result;
+
   }
 
   private static void addExecutionHistory(AgentContext context, ActionType actionType,
