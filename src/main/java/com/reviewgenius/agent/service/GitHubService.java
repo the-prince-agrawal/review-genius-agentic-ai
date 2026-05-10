@@ -10,16 +10,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import static com.reviewgenius.agent.config.CacheConfig.LOGS_CACHE;
+import static com.reviewgenius.agent.util.CommonUtil.getMockResponse;
 
 @Service
 public class GitHubService {
   @Value("${github.token}")
   private String githubToken;
 
+  @Value("${github.remoteFetchDisabled:false}")
+  private boolean isGithubRemoteFetchDisabled;
+
   private final RestTemplate restTemplate = new RestTemplate();
 
   @Cacheable(value = LOGS_CACHE, key = "#input")
   public String fetchPullRequestDiff(String input) {
+    if (isGithubRemoteFetchDisabled) {
+      return getMockResponse("static/mock-github-pr.patch");
+    }
     HttpEntity<Void> entity = getHeader();
     String diffUrl = getDiffUrl(input);
     ResponseEntity<String> response = restTemplate.exchange(diffUrl, HttpMethod.GET, entity, String.class);

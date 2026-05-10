@@ -1,0 +1,56 @@
+diff --git a/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java b/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java
+index 52290e8..a01b505 100644
+--- a/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java
++++ b/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java
+@@ -1,4 +1,19 @@
+package com.princeagrawal.ai.logintelligence.config;
+
++import org.springframework.cache.CacheManager;
++import org.springframework.cache.annotation.EnableCaching;
++import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
++import org.springframework.context.annotation.Bean;
++import org.springframework.context.annotation.Configuration;
++
++@Configuration
++@EnableCaching
+public class CacheConfig {
+-}
++
++    public static final String LOGS_CACHE = "logs";
++
++    @Bean
++    public CacheManager cacheManager() {
++        return new ConcurrentMapCacheManager(LOGS_CACHE, "responses");
++    }
++}
+\ No newline at end of file
+diff --git a/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java b/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java
+index 38451ab..9c0db0b 100644
+--- a/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java
++++ b/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java
+@@ -4,13 +4,15 @@
+import com.princeagrawal.ai.logintelligence.mapper.response.ResponseMapper;
+import com.princeagrawal.ai.logintelligence.model.response.LogResponseDto;
+import org.springframework.ai.chat.client.ChatClient;
++import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
++import static com.princeagrawal.ai.logintelligence.config.CacheConfig.LOGS_CACHE;
++
+@Service
+public class LogAnalysisService {
+private final RequestMapper requestMapper;
+private final ResponseMapper responseMapper;
+-
+private final ChatClient chatClient;
+
+public LogAnalysisService(RequestMapper requestMapper, ResponseMapper responseMapper, ChatClient.Builder builder) {
+@@ -18,7 +20,7 @@ public LogAnalysisService(RequestMapper requestMapper, ResponseMapper responseMa
+this.responseMapper = responseMapper;
+this.chatClient = builder.build();
+}
+-
++    @Cacheable(LOGS_CACHE)
+public LogResponseDto analyzeLogs(String inputErrorLog) {
+String requestPrompt = requestMapper.mapInputErrorLogToRequestDto(inputErrorLog);
+String response = chatClient.prompt().user(requestPrompt).call().content();
