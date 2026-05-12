@@ -1,5 +1,6 @@
 package com.reviewgenius.agent.observability.execution;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.reviewgenius.agent.core.act.ActionResultStatus;
 import com.reviewgenius.agent.enums.ActionType;
 import lombok.*;
@@ -11,6 +12,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ActionExecutionHistory {
   private ActionType actionType;
   private ActionResultStatus status;

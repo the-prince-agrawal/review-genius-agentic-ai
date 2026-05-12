@@ -12,6 +12,5 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CodeReviewResponseDto {
-
-  private List<ReviewIssueDto> issues;
+  private List<Issue> issues;
 }

@@ -23,7 +23,7 @@ public class ThinkEngine {
       return ANALYZE_CODE;
     }
 
-    if (context.getReview() == null) {
+    if (!CollectionUtils.isEmpty(context.getIssues())) {
       return GENERATE_REVIEW;
     }
 

@@ -6,9 +6,7 @@ import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.CodeReviewResponseDto;
 import com.reviewgenius.agent.model.Issue;
-import com.reviewgenius.agent.model.ReviewIssueDto;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -16,36 +14,23 @@ import static com.reviewgenius.agent.Constants.REVIEW_GENERATED_SUCCESS_MESSAGE;
 import static com.reviewgenius.agent.enums.ActionType.GENERATE_REVIEW;
 
 @Service
+// TODO: this is for future use
+// If not used, please consider removing it to reduce code complexity and maintenance overhead.
 public class GenerateReviewHandler implements ActionHandler {
   @Override
   public ActionResult<?> execute(AgentContext context) {
     List<Issue> issues = context.getIssues();
-    CodeReviewResponseDto review = getFormattedReview(issues);
-    context.setReview(review);
     context.setCompleted(true);
-    return getSuccessResponse(review);
+    context.setReview(getCodeReviewResponseDto(issues));
+    return getSuccessResponse(issues);
   }
 
-  private static ActionResult<CodeReviewResponseDto> getSuccessResponse(CodeReviewResponseDto review) {
+  private CodeReviewResponseDto getCodeReviewResponseDto(List<Issue> issues) {
+    return CodeReviewResponseDto.builder().issues(issues).build();
+  }
+
+  private static ActionResult<List<Issue>> getSuccessResponse(List<Issue> review) {
     return ActionResult.success(REVIEW_GENERATED_SUCCESS_MESSAGE, review);
-  }
-
-  private CodeReviewResponseDto getFormattedReview(List<Issue> issues) {
-    if (CollectionUtils.isEmpty(issues)) {
-      return CodeReviewResponseDto.builder().issues(List.of()).build();
-    }
-    List<ReviewIssueDto> reviewIssues = issues.stream()
-        .map(issue -> ReviewIssueDto.builder()
-            .fileName(issue.getFileName())
-            .lineNumber(issue.getLineNumber())
-            .severity(issue.getSeverity())
-            .description(issue.getDescription())
-            .suggestion(issue.getSuggestion())
-            .build())
-        .toList();
-    return CodeReviewResponseDto.builder()
-        .issues(reviewIssues)
-        .build();
   }
 
   @Override
