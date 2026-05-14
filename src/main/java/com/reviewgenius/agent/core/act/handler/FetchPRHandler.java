@@ -29,18 +29,15 @@ public class FetchPRHandler implements ActionHandler {
       String diff = gitHubService.fetchPullRequestDiff(prUrl);
       if (!StringUtils.hasText(diff)) {
         log.error("Received empty diff from GitHub");
-        return ActionResult.failure(
-            "Failed to fetch PR",
-            "GitHub returned empty diff");
+        return ActionResult.failure("Failed to fetch PR", "GitHub returned empty diff");
       }
 
       context.setRawDiff(diff);
       return ActionResult.success("PR fetched successfully", diff);
+
     } catch (Exception ex) {
       log.error("Error while fetching PR diff", ex);
-      return ActionResult.failure(
-          "Failed to fetch PR",
-          ex.getMessage());
+      return ActionResult.failure("Failed to fetch PR", ex.getMessage());
     }
   }
 

@@ -1,6 +1,7 @@
 package com.reviewgenius.agent.model;
 
 import com.reviewgenius.agent.core.think.prompt.PromptVersion;
+import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.observability.execution.ActionExecutionHistory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,10 +15,11 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+// TODO create small small public static inner classes inside this class for better organization of related fields, e.g.
+// DiffInfo, AnalysisInfo, etc.
 public class AgentContext {
   private ReviewRequestDto inputDto;
   List<Issue> issues;
-  Map<String, Object> metadata;
   private String rawDiff;
   private String parsedDiff;
   private String analysis;
@@ -26,4 +28,5 @@ public class AgentContext {
   private String correlationId;
   private PromptVersion promptVersion;
   private List<ActionExecutionHistory> executionHistories;
+  private Map<ActionType, Integer> retryCounts;
 }

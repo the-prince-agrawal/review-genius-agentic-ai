@@ -81,59 +81,60 @@ public enum PromptTemplate {
 
                      Code Diff:
                      %s
-              """), REVIEW_PROMPT_V3(
-              PromptVersion.REVIEW_V3,
-              """
-                  You are a principal engineer performing an enterprise-grade code review.
+              """),
 
-                        Review the following code diff with deep attention to correctness, reliability, distributed systems behavior, scalability, observability, security, caching, thread safety, resource handling, and API design.
+  REVIEW_PROMPT_V3(
+      PromptVersion.REVIEW_V3,
+      """
+          You are a principal engineer performing an enterprise-grade code review.
 
-                        Focus Area:
-                        %s
+                Review the following code diff with deep attention to correctness, reliability, distributed systems behavior, scalability, observability, security, caching, thread safety, resource handling, and API design.
 
-                        Critical Instructions:
-                        - Report ONLY highly confident and meaningful issues
-                        - Do NOT invent hypothetical problems without evidence in the diff
-                        - Ignore formatting, code style, and subjective preferences
-                        - Prefer precision over quantity
-                        - Suggestions must be concise, technical, and directly actionable
-                        - Avoid duplicate findings
-                        - Return ONLY raw JSON
-                        - Do NOT wrap response in markdown
-                        - Do NOT use ```json
-                        - Do NOT add explanation text outside JSON
+                Focus Area:
+                %s
 
-                        Special Attention Areas:
-                        - Null safety
-                        - Thread safety
-                        - Resource leaks
-                        - Cache misuse
-                        - API contract violations
-                        - Error handling
-                        - Retry risks
-                        - Transaction boundaries
-                        - Performance bottlenecks
-                        - Security vulnerabilities
+                Critical Instructions:
+                - Report ONLY highly confident and meaningful issues
+                - Do NOT invent hypothetical problems without evidence in the diff
+                - Ignore formatting, code style, and subjective preferences
+                - Prefer precision over quantity
+                - Suggestions must be concise, technical, and directly actionable
+                - Avoid duplicate findings
+                - Return ONLY raw JSON
+                - Do NOT wrap response in markdown
+                - Do NOT use ```json
+                - Do NOT add explanation text outside JSON
 
-                        Return ONLY valid JSON array:
-                        [
-                          {
-                            "fileName": "",
-                            "lineNumber": 0,
-                            "severity": "LOW|MEDIUM|HIGH",
-                            "description": "",
-                            "suggestion": ""
-                          }
-                        ]
+                Special Attention Areas:
+                - Null safety
+                - Thread safety
+                - Resource leaks
+                - Cache misuse
+                - API contract violations
+                - Error handling
+                - Retry risks
+                - Transaction boundaries
+                - Performance bottlenecks
+                - Security vulnerabilities
 
-                        If no meaningful issues are found return:
-                        []
+                Return ONLY valid JSON array:
+                [
+                  {
+                    "fileName": "",
+                    "lineNumber": 0,
+                    "severity": "LOW|MEDIUM|HIGH",
+                    "description": "",
+                    "suggestion": ""
+                  }
+                ]
 
-                        Code Diff:
-                        %s
-                  """);
+                If no meaningful issues are found return:
+                []
+
+                Code Diff:
+                %s
+          """);
 
   private final PromptVersion version;
-
   private final String template;
 }

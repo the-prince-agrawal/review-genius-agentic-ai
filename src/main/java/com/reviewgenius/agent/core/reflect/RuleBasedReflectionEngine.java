@@ -11,19 +11,21 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
+import static com.reviewgenius.agent.core.act.ActionResultStatus.FAILURE;
 
 @Component
 public class RuleBasedReflectionEngine implements ReflectionEngine {
   @Override
   public ReflectionResult reflect(ActionType actionType, ActionResult<?> result, AgentContext context) {
     ReflectionResult reflectionResult = new ReflectionResult();
-
     reflectionResult.setReflectionType(ReflectionType.STRUCTURAL);
 
-    if (result == null) {
-      reflectionResult.addProblem("ActionResult is null");
-      return fail(reflectionResult);
+    if (Objects.isNull(result) || FAILURE.equals(result.getStatus())) {
+      reflectionResult.addProblem("Action failed");
+      return getFailedResult(reflectionResult);
     }
 
     if (actionType == ActionType.ANALYZE_CODE) {
@@ -31,14 +33,17 @@ public class RuleBasedReflectionEngine implements ReflectionEngine {
     }
 
     if (reflectionResult.getDetectedProblems().isEmpty()) {
-      reflectionResult.setPassed(true);
-      reflectionResult.setDecision(ReflectionDecision.ACCEPT);
-      reflectionResult.setConfidenceScore(0.95);
-      reflectionResult.setReflectionSummary("Reflection passed successfully");
-      return reflectionResult;
+      return getSuccessResult(reflectionResult);
     }
+    return getFailedResult(reflectionResult);
+  }
 
-    return fail(reflectionResult);
+  private static ReflectionResult getSuccessResult(ReflectionResult reflectionResult) {
+    reflectionResult.setPassed(true);
+    reflectionResult.setDecision(ReflectionDecision.ACCEPT);
+    reflectionResult.setConfidenceScore(0.95);
+    reflectionResult.setReflectionSummary("Reflection passed successfully");
+    return reflectionResult;
   }
 
   private void validateAnalyzeCode(AgentContext context, ReflectionResult reflectionResult) {
@@ -76,7 +81,7 @@ public class RuleBasedReflectionEngine implements ReflectionEngine {
     }
   }
 
-  private ReflectionResult fail(ReflectionResult reflectionResult) {
+  private ReflectionResult getFailedResult(ReflectionResult reflectionResult) {
     reflectionResult.setPassed(false);
     reflectionResult.setRetryRecommended(true);
     reflectionResult.setDecision(ReflectionDecision.RETRY);

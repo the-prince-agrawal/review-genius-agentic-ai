@@ -13,6 +13,7 @@ public class CommonUtil {
       log.info("Loading dummy response from file: {}", fileName);
       return new String(new ClassPathResource(fileName).getInputStream().readAllBytes());
     } catch (IOException ex) {
+      log.error("Failed to load dummy response from file: {}", fileName, ex);
       throw new RuntimeException("Failed to load dummy LLM response", ex);
     }
   }

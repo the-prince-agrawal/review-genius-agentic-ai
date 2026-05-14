@@ -34,8 +34,11 @@ public class ActionExecutor {
     Instant startedAt = Instant.now();
     agentLogger.logStepStart(actionType);
     ActionResult<?> result;
+
     try {
+
       result = handler.execute(context);
+
     } catch (Exception ex) {
       agentLogger.logStepFailure(actionType, ex);
       result = ActionResult.failure("Unexpected action execution failure", ex.getMessage());

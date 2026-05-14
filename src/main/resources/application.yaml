@@ -27,6 +27,8 @@ logging:
 
 agent:
   maxSteps: 5
+  retry:
+    maxRetries: 2
   llm:
     client:
       disabled: true

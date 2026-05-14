@@ -29,8 +29,44 @@ public class ParseDiffHandler implements ActionHandler {
 
   private void validateParsedDiff(String parsedDiff) {
     if (!StringUtils.hasText(parsedDiff)) {
+      throw new IllegalStateException("Parsed diff is empty");
+    }
+
+    String normalized = parsedDiff.trim();
+    // Detect placeholder / useless formatted output
+    if ("----------------------".equals(normalized)) {
+      throw new IllegalStateException("Parsed diff does not contain meaningful content");
+    }
+
+    boolean hasFile = normalized.contains("File:");
+    boolean hasAdded = normalized.contains("Added:");
+    boolean hasRemoved = normalized.contains("Removed:");
+
+    // Must contain at least one file
+    if (!hasFile) {
       throw new IllegalStateException(
-          "Parsed diff is empty");
+          "No files detected in parsed diff");
+    }
+
+    // Must contain actual code changes
+    if (!hasAdded && !hasRemoved) {
+      throw new IllegalStateException(
+          "No code changes detected in parsed diff");
+    }
+
+    String[] lines = normalized.split("\n");
+    boolean hasActualContent = false;
+
+    for (String line : lines) {
+      String trimmed = line.trim();
+      if (trimmed.startsWith("- ") && trimmed.length() > 2) {
+        hasActualContent = true;
+        break;
+      }
+    }
+
+    if (!hasActualContent) {
+      throw new IllegalStateException("Parsed diff contains no meaningful code lines");
     }
   }
 

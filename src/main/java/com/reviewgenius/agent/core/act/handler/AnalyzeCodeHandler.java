@@ -40,6 +40,7 @@ public class AnalyzeCodeHandler implements ActionHandler {
       return ActionResult.success("Code analyzed",
           Map.of("analysisResult", analysisResult, "issueCount", issues.size()));
     } catch (Exception ex) {
+      log.error("Error during code analysis: {}", ex.getMessage(), ex);
       return ActionResult.failure("Action execution failed", ex.getMessage());
     }
   }

@@ -10,8 +10,7 @@ public class IssueParserUtil {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   public static List<Issue> parseIssues(String json) {
     try {
-      String cleanedJson = cleanJson(json);
-      return OBJECT_MAPPER.readValue(cleanedJson, new TypeReference<List<Issue>>() {
+      return OBJECT_MAPPER.readValue(cleanJson(json), new TypeReference<List<Issue>>() {
       });
     } catch (Exception ex) {
       throw new RuntimeException("Failed to parse LLM response", ex);
