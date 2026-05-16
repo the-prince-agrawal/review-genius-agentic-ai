@@ -27,10 +27,8 @@ logging:
 
 agent:
   retry:
-    maxRetries: 2
+    maxRetries: 3
   llm:
     client:
       disabled: true
-  prompt:
-    version: REVIEW_V3
 

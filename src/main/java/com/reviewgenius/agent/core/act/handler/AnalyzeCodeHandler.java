@@ -31,7 +31,6 @@ public class AnalyzeCodeHandler implements ActionHandler {
   @Override
   public ActionResult<?> execute(AgentContext context) {
     String prompt = promptBuilder.buildCodeReviewPrompt(context);
-    log.debug("Using prompt version: {}", context.getPromptVersion());
     try {
       String analysisResult = LLMClient.getResponse(prompt);
       List<Issue> issues = parseIssues(analysisResult);

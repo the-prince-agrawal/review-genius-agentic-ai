@@ -7,132 +7,168 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum PromptTemplate {
 
-  REVIEW_PROMPT_V1(PromptVersion.REVIEW_V1,
+  /*
+   * ATTEMPT 1
+   *
+   * MODEL : gpt-4o TEMPERATURE : 0.7 GOAL : Broad intelligent analysis STRICTNESS : Medium
+   *
+   * WHY? - Let model think more freely initially - Better exploratory reasoning - Better issue discovery
+   */
+  REVIEW_PROMPT_V1(
+      PromptVersion.REVIEW_V1,
       """
-              You are a senior software engineer doing a strict code review.
+          You are a senior software engineer performing a professional code review.
 
-              Analyze the following code diff and identify issues.
+          Analyze the following code diff carefully and identify meaningful issues.
 
-              Focus Area:
-              %s
+          Focus Area:
+          %s
 
-              Rules:
-              - Focus on bugs, performance, security, and bad practices
-              - Ignore formatting and minor style issues
-              - Be precise and concise
-              - Return ONLY raw JSON
-              - Do NOT wrap response in markdown
-              - Do NOT use ```json
-              - Do NOT add explanation text
+          Review Rules:
+          - Focus on bugs, performance, security, concurrency, maintainability, and bad practices
+          - Ignore formatting and trivial style issues
+          - Avoid generic recommendations
+          - Be concise and technical
+          - Return ONLY raw JSON
+          - Do NOT wrap response in markdown
+          - Do NOT use ```json
+          - Do NOT add explanation text outside JSON
 
-              Return ONLY valid JSON array:
-              [
-                {
-                  "fileName": "",
-                  "lineNumber": 0,
-                  "severity": "LOW|MEDIUM|HIGH",
-                  "description": "",
-                  "suggestion": ""
-                }
-              ]
+          Return ONLY valid JSON array:
+          [
+            {
+              "fileName": "",
+              "lineNumber": 0,
+              "severity": "LOW|MEDIUM|HIGH",
+              "description": "",
+              "suggestion": ""
+            }
+          ]
 
-              Code Diff:
-              %s
-          """), REVIEW_PROMPT_V2(PromptVersion.REVIEW_V2,
-          """
-                     ou are an expert staff-level software engineer reviewing a pull request.
+          If no issues are found return:
+          []
 
-                     Carefully analyze the following code diff and identify ONLY real and meaningful issues.
+          Code Diff:
+          %s
+          """),
 
-                     Focus Area:
-                     %s
+  /*
+   * ATTEMPT 2 (FIRST RETRY)
+   *
+   * MODEL : gpt-4o TEMPERATURE : 0.3 GOAL : Stable structured response STRICTNESS : High
+   *
+   * WHY? - Retry means previous response failed - Reduce creativity - Enforce JSON discipline - Reduce hallucination
+   */
+  REVIEW_PROMPT_V2(
+      PromptVersion.REVIEW_V2,
+      """
+          You are an expert staff-level engineer performing a STRICT enterprise code review.
 
-                     Strict Review Rules:
-                     - Detect bugs, concurrency problems, performance bottlenecks, security issues, scalability risks, and maintainability concerns
-                     - Ignore formatting, naming preferences, and trivial style suggestions
-                     - Avoid generic recommendations
-                     - Do NOT assume missing context unless strongly indicated
-                     - Prefer high-confidence findings only
-                     - Avoid hallucinated issues
-                     - Each issue must include a concrete explanation and actionable suggestion
-                     - Return ONLY raw JSON
-                     - Do NOT wrap response in markdown
-                     - Do NOT use ```json
-                     - Do NOT add explanation text outside JSON
+          Analyze the following code diff and identify ONLY highly confident and meaningful issues.
 
-                     Severity Guidelines:
-                     - HIGH   -> production bug, security risk, data corruption, concurrency issue
-                     - MEDIUM -> maintainability, scalability, performance concern
-                     - LOW    -> minor improvement with low impact
+          Focus Area:
+          %s
 
-                     Return ONLY valid JSON array:
-                     [
-                       {
-                         "fileName": "",
-                         "lineNumber": 0,
-                         "severity": "LOW|MEDIUM|HIGH",
-                         "description": "",
-                         "suggestion": ""
-                       }
-                     ]
+          STRICT REVIEW RULES:
+          - Detect ONLY real bugs, security risks, concurrency issues, scalability concerns, and performance bottlenecks
+          - Ignore formatting, naming preferences, and subjective style suggestions
+          - Avoid generic recommendations
+          - Do NOT hallucinate missing context
+          - Prefer precision over quantity
+          - Avoid duplicate findings
+          - Suggestions must be concrete and actionable
 
-                     If no issues are found return:
-                     []
+          CRITICAL RESPONSE RULES:
+          - Return ONLY VALID RAW JSON
+          - Response MUST be parsable by Jackson ObjectMapper
+          - Do NOT wrap response in markdown
+          - Do NOT use ```json
+          - Do NOT add comments
+          - Do NOT add explanation text
+          - Do NOT return invalid escaping
+          - Output MUST start with '['
+          - Output MUST end with ']'
 
-                     Code Diff:
-                     %s
-              """),
+          Severity Guidelines:
+          - HIGH   -> production bug, security issue, data corruption, concurrency issue
+          - MEDIUM -> scalability, maintainability, retry risk, performance concern
+          - LOW    -> minor improvement with low impact
 
+          Return ONLY valid JSON array:
+          [
+            {
+              "fileName": "",
+              "lineNumber": 0,
+              "severity": "LOW|MEDIUM|HIGH",
+              "description": "",
+              "suggestion": ""
+            }
+          ]
+
+          If no issues are found return:
+          []
+
+          Code Diff:
+          %s
+          """),
+
+  /*
+   * ATTEMPT 3 (FINAL RETRY)
+   *
+   * MODEL : gpt-4.1-mini (fallback) TEMPERATURE : 0.1 GOAL : Maximum deterministic stability STRICTNESS : VERY HIGH
+   *
+   * WHY? - Previous attempts failed - Need deterministic output - Prioritize parsable JSON over creativity - Usually
+   * used with chunk splitting
+   */
   REVIEW_PROMPT_V3(
       PromptVersion.REVIEW_V3,
       """
-          You are a principal engineer performing an enterprise-grade code review.
+          You are a principal engineer performing a FINAL STRICT deterministic code review retry.
 
-                Review the following code diff with deep attention to correctness, reliability, distributed systems behavior, scalability, observability, security, caching, thread safety, resource handling, and API design.
+          Previous responses failed validation.
 
-                Focus Area:
-                %s
+          You MUST return STRICTLY VALID JSON ONLY.
 
-                Critical Instructions:
-                - Report ONLY highly confident and meaningful issues
-                - Do NOT invent hypothetical problems without evidence in the diff
-                - Ignore formatting, code style, and subjective preferences
-                - Prefer precision over quantity
-                - Suggestions must be concise, technical, and directly actionable
-                - Avoid duplicate findings
-                - Return ONLY raw JSON
-                - Do NOT wrap response in markdown
-                - Do NOT use ```json
-                - Do NOT add explanation text outside JSON
+          Focus Area:
+          %s
 
-                Special Attention Areas:
-                - Null safety
-                - Thread safety
-                - Resource leaks
-                - Cache misuse
-                - API contract violations
-                - Error handling
-                - Retry risks
-                - Transaction boundaries
-                - Performance bottlenecks
-                - Security vulnerabilities
+          CRITICAL ANALYSIS RULES:
+          - Report ONLY highly confident issues
+          - Do NOT invent hypothetical problems
+          - Ignore formatting and subjective suggestions
+          - Keep findings concise and technical
+          - Avoid duplicate findings
+          - Prefer fewer HIGH QUALITY findings
 
-                Return ONLY valid JSON array:
-                [
-                  {
-                    "fileName": "",
-                    "lineNumber": 0,
-                    "severity": "LOW|MEDIUM|HIGH",
-                    "description": "",
-                    "suggestion": ""
-                  }
-                ]
+          ABSOLUTE RESPONSE REQUIREMENTS:
+          - Return ONLY VALID JSON ARRAY
+          - JSON MUST be parsable by Jackson
+          - NO markdown
+          - NO comments
+          - NO explanation text
+          - NO invalid escaping
+          - NO trailing commas
+          - NO extra text before JSON
+          - NO extra text after JSON
+          - Output MUST start with '['
+          - Output MUST end with ']'
 
-                If no meaningful issues are found return:
-                []
+          REQUIRED JSON FORMAT:
+          [
+            {
+              "fileName": "",
+              "lineNumber": 0,
+              "severity": "LOW|MEDIUM|HIGH",
+              "description": "",
+              "suggestion": ""
+            }
+          ]
 
-                Code Diff:
-                %s
+          If no issues are found return:
+          []
+
+          Code Diff:
+          %s
           """);
 
   private final PromptVersion version;
