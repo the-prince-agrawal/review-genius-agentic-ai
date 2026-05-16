@@ -34,7 +34,7 @@ class AnalyzeCodeHandlerTest {
   @Disabled
   void testExecute() {
     AgentContext context = getAgentContext();
-    doCallRealMethod().when(promptBuilder).buildCodeReviewPrompt(context);
+    doCallRealMethod().when(promptBuilder).buildCodeReviewPrompt(context, "chunk");
     when(llmClient.getResponse(anyString())).thenReturn(getAnalysisResult());
     ActionResult<?> actionResult = analyzeCodeHandler.execute(context);
     assertEquals(ActionResultStatus.SUCCESS, actionResult.getStatus());
@@ -48,7 +48,7 @@ class AnalyzeCodeHandlerTest {
         .inputDto(reviewRequestDto)
         .parsedDiff("PARSED_DIFF")
         .completed(false)
-        .build();
+        .workflowFailed(false).build();
   }
 
   private String getAnalysisResult() {

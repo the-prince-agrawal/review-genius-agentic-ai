@@ -115,6 +115,7 @@ public class AgentOrchestrator {
         .executionHistories(new ArrayList<>())
         .retryCounts(new HashMap<>())
         .inputDto(input)
+        .analysis(new ArrayList<>())
         .correlationId(TraceContext.getCorrelationId())
         .completed(false)
         .workflowFailed(false)

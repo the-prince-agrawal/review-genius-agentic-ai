@@ -16,7 +16,7 @@ spring:
 
 github:
   token: ${LOG_INTELLIGENCE_GITHUB_ACCESS_TOKEN_FOR_PR_REVIEW}
-  remoteFetchDisabled: false
+  remoteFetchDisabled: true
 
 logging:
   pattern:
@@ -28,6 +28,8 @@ logging:
 agent:
   retry:
     maxRetries: 3
+  analysis:
+    chunk-size: 1000
   llm:
     client:
       disabled: true

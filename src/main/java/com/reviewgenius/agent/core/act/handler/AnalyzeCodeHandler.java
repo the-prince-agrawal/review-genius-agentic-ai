@@ -8,38 +8,64 @@ import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.Issue;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import static com.reviewgenius.agent.enums.ActionType.ANALYZE_CODE;
+import static com.reviewgenius.agent.util.IssueParserUtil.getParsedDifferenceChunks;
 import static com.reviewgenius.agent.util.IssueParserUtil.parseIssues;
 
 @Service
 @Slf4j
 public class AnalyzeCodeHandler implements ActionHandler {
 
+  @Value("${agent.analysis.chunk-size:1000}")
+  private int chunkSize;
   private final LLMClient LLMClient;
   private final PromptBuilder promptBuilder;
 
-  public AnalyzeCodeHandler(LLMClient LLMClient, PromptBuilder promptBuilder) {
+  private final Executor asyncExecutor;
+
+  public AnalyzeCodeHandler(LLMClient LLMClient, PromptBuilder promptBuilder, Executor asyncExecutor) {
     this.LLMClient = LLMClient;
     this.promptBuilder = promptBuilder;
+    this.asyncExecutor = asyncExecutor;
   }
 
   @Override
   public ActionResult<?> execute(AgentContext context) {
-    String prompt = promptBuilder.buildCodeReviewPrompt(context);
+    String parsedDiff = context.getParsedDiff();
+    List<String> diffChunks = getParsedDifferenceChunks(parsedDiff, chunkSize);
+    log.info("Starting parallel analysis. totalChunks={}", diffChunks.size());
+
     try {
-      String analysisResult = LLMClient.getResponse(prompt);
-      List<Issue> issues = parseIssues(analysisResult);
-      context.setAnalysis(analysisResult);
-      context.setIssues(issues);
+      List<CompletableFuture<List<Issue>>> futures = diffChunks.stream()
+          .map(diffChunk -> CompletableFuture.supplyAsync(() -> {
+            String chunkPrompt = promptBuilder.buildCodeReviewPrompt(context, diffChunk);
+            log.debug("Sending chunk to LLM. chunkSize={}", diffChunk.length());
+            String analysisResult = LLMClient.getResponse(chunkPrompt);
+            context.getAnalysis().add(analysisResult);
+            return parseIssues(analysisResult);
+          }, asyncExecutor)).toList();
+
+      CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+      allFutures.join();
+      List<Issue> allIssues = futures.stream()
+          .map(CompletableFuture::join)
+          .flatMap(List::stream)
+          .collect(Collectors.toList());
+      context.setIssues(allIssues);
+      log.info("Parallel code analysis completed. totalIssues={}", allIssues.size());
       return ActionResult.success("Code analyzed",
-          Map.of("analysisResult", analysisResult, "issueCount", issues.size()));
+          Map.of("issueCount", allIssues.size(), "chunkCount", diffChunks.size()));
     } catch (Exception ex) {
-      log.error("Error during code analysis: {}", ex.getMessage(), ex);
+      log.error("Error during parallel code analysis: {}", ex.getMessage(), ex);
       return ActionResult.failure("Action execution failed", ex.getMessage());
     }
   }

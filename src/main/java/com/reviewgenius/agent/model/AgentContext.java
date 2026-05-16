@@ -22,7 +22,7 @@ public class AgentContext {
   List<Issue> issues;
   private String rawDiff;
   private String parsedDiff;
-  private String analysis;
+  private List<String> analysis;
   private CodeReviewResponseDto review;
   private boolean completed;
   private String correlationId;

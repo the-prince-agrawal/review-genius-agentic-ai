@@ -12,8 +12,8 @@ import static com.reviewgenius.agent.enums.ActionType.ANALYZE_CODE;
 @Service
 @Slf4j
 public class PromptBuilder {
-  public String buildCodeReviewPrompt(AgentContext context) {
-    if (!StringUtils.hasText(context.getParsedDiff())) {
+  public String buildCodeReviewPrompt(AgentContext context, String diffChunk) {
+    if (!StringUtils.hasText(diffChunk)) {
       return "No code diff provided.";
     }
     Integer retryCount = context.getRetryCounts().getOrDefault(ANALYZE_CODE, 0);
@@ -21,7 +21,7 @@ public class PromptBuilder {
     PromptTemplate template = getPromptTemplate(version);
     context.setPromptVersion(version);
     log.info("Using prompt version: {}", context.getPromptVersion());
-    return template.getTemplate().formatted(context.getInputDto().getReviewType(), context.getParsedDiff());
+    return template.getTemplate().formatted(context.getInputDto().getReviewType(), diffChunk);
   }
 
   private PromptTemplate getPromptTemplate(PromptVersion version) {
