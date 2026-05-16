@@ -20,7 +20,7 @@ public class PromptBuilder {
     PromptVersion version = PromptVersion.fromRetryAttempt(retryCount);
     PromptTemplate template = getPromptTemplate(version);
     context.setPromptVersion(version);
-    log.info("Using prompt version: {}", context.getPromptVersion());
+    log.info("Using prompt version: {}", version);
     return template.getTemplate().formatted(context.getInputDto().getReviewType(), diffChunk);
   }
 
