@@ -27,7 +27,6 @@ public class ThinkEngine {
       return GENERATE_REVIEW;
     }
 
-    context.setCompleted(true);
-    return DONE;
+    throw new IllegalStateException("No next action available for current context state");
   }
 }

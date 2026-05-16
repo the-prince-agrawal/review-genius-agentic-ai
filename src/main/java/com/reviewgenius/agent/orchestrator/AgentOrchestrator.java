@@ -16,7 +16,6 @@ import com.reviewgenius.agent.observability.execution.AgentExecutionResult;
 import com.reviewgenius.agent.observability.logging.ReflectionLogger;
 import com.reviewgenius.agent.observability.trace.TraceContext;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -25,9 +24,6 @@ import java.util.HashMap;
 @Component
 @Slf4j
 public class AgentOrchestrator {
-
-  @Value("${agent.maxSteps:5}")
-  private int maxSteps;
   private final ThinkEngine thinkEngine;
   private final ActionExecutor actionExecutor;
   private final ReflectionEngine reflectionEngine;
@@ -46,46 +42,79 @@ public class AgentOrchestrator {
   public AgentExecutionResult runAgent(ReviewRequestDto input, boolean debug) {
     long startTime = System.currentTimeMillis();
     AgentContext context = buildContext(input);
-    executeSteps(context);
+    executeWorkflow(context);
     long totalExecutionTimeMs = System.currentTimeMillis() - startTime;
     return buildExecutionResult(context, totalExecutionTimeMs, debug);
   }
 
-  private void executeSteps(AgentContext context) {
-    // TODO: implement it as while (!context.isCompleted()) using do while loop
-    /*
-     * while (!completed) { action = think() do { execute reflect } while(retry) }
-     */
-    for (int step = 0; step < maxSteps; step++) {
-
-      ActionType actionType = thinkEngine.think(context);
-
-      ActionResult<?> result = actionExecutor.act(actionType, context);
-
-      ReflectionResult reflectionResult = reflectionEngine.reflect(actionType, result, context);
-      reflectionLogger.logReflection(actionType, reflectionResult);
-      RetryDecision retryDecision = retryEngine.evaluateRetry(actionType, reflectionResult, context);
-
-      /*
-       * if (retryDecision == RetryDecision.RETRY_ALLOWED) { log.info("Retrying action={}", actionType); step--;
-       * continue; }
-       */
-
-      if (shouldBreak(context, result, reflectionResult)) {
-        break;
-      }
+  private void executeWorkflow(AgentContext context) {
+    while (!context.isCompleted()) {
+      ActionType nextAction = thinkEngine.think(context);
+      executeActionWithRetry(nextAction, context);
     }
   }
 
-  private static boolean shouldBreak(AgentContext context, ActionResult<?> result, ReflectionResult reflectionResult) {
-    boolean shouldBreak = result.getStatus() == ActionResultStatus.FAILURE
+  private void executeActionWithRetry(ActionType actionType, AgentContext context) {
+    boolean retry;
+    do {
+      retry = false;
+      ActionResult<?> actionResult = executeAction(actionType, context);
+      ReflectionResult reflectionResult = reflectAction(actionType, actionResult, context);
+      RetryDecision retryDecision = evaluateRetry(actionType, reflectionResult, context);
+
+      if (shouldStopWorkflow(reflectionResult, retryDecision)) {
+        log.error("Workflow stopped. Retry denied after reflection failure. actionType={}", actionType);
+        context.setCompleted(true);
+        return;
+      }
+
+      if (isRetryAllowed(retryDecision)) {
+        log.info("Retrying action={}", actionType);
+        retry = true;
+      }
+
+      if (shouldStopExecution(context, actionResult, reflectionResult)) {
+        return;
+      }
+    } while (retry);
+  }
+
+  private ActionResult<?> executeAction(ActionType actionType, AgentContext context) {
+    log.info("Executing action={}", actionType);
+    return actionExecutor.act(actionType, context);
+  }
+
+  private ReflectionResult reflectAction(ActionType actionType, ActionResult<?> result, AgentContext context) {
+    ReflectionResult reflectionResult = reflectionEngine.reflect(actionType, result, context);
+    reflectionLogger.logReflection(actionType, reflectionResult);
+    return reflectionResult;
+  }
+
+  private RetryDecision evaluateRetry(ActionType actionType, ReflectionResult reflectionResult, AgentContext context) {
+    return retryEngine.evaluateRetry(actionType, reflectionResult, context);
+  }
+
+  private boolean shouldStopWorkflow(ReflectionResult reflectionResult, RetryDecision retryDecision) {
+    return reflectionResult.getDecision() == ReflectionDecision.RETRY
+        && retryDecision == RetryDecision.RETRY_DENIED;
+  }
+
+  private boolean isRetryAllowed(RetryDecision retryDecision) {
+    return retryDecision == RetryDecision.RETRY_ALLOWED;
+  }
+
+  private boolean shouldStopExecution(AgentContext context, ActionResult<?> result,
+      ReflectionResult reflectionResult) {
+    boolean shouldTerminate = result.getStatus() == ActionResultStatus.FAILURE
         || context.isCompleted()
         || reflectionResult.getDecision() == ReflectionDecision.FAIL;
-    if (shouldBreak) {
-      log.info("Breaking execution loop. ActionResult status: {}, Reflection decision: {}, Context completed: {}",
+
+    if (shouldTerminate) {
+      log.info("Terminating workflow. status={}, reflectionDecision={}, completed={}",
           result.getStatus(), reflectionResult.getDecision(), context.isCompleted());
     }
-    return shouldBreak;
+
+    return shouldTerminate;
   }
 
   private static AgentContext buildContext(ReviewRequestDto input) {

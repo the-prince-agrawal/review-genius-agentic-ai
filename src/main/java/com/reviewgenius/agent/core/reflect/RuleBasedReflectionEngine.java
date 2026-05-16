@@ -24,7 +24,9 @@ public class RuleBasedReflectionEngine implements ReflectionEngine {
     reflectionResult.setReflectionType(ReflectionType.STRUCTURAL);
 
     if (Objects.isNull(result) || FAILURE.equals(result.getStatus())) {
-      reflectionResult.addProblem("Action failed");
+      String resultMessage = result != null ? result.getMessage() : "null";
+      String resultData = result != null && result.getData() != null ? result.getData().toString() : "null";
+      reflectionResult.addProblem(actionType + "Action failed" + " with message: " + resultMessage + " and data: " + resultData);
       return getFailedResult(reflectionResult);
     }
 

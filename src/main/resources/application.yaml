@@ -16,7 +16,7 @@ spring:
 
 github:
   token: ${LOG_INTELLIGENCE_GITHUB_ACCESS_TOKEN_FOR_PR_REVIEW}
-  remoteFetchDisabled: true
+  remoteFetchDisabled: false
 
 logging:
   pattern:
@@ -26,7 +26,6 @@ logging:
     org.apache.catalina: WARN
 
 agent:
-  maxSteps: 5
   retry:
     maxRetries: 2
   llm:

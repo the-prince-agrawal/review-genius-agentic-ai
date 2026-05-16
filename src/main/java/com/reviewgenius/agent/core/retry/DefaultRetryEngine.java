@@ -10,25 +10,32 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
-import static com.reviewgenius.agent.core.retry.RetryDecision.RETRY_DENIED;
-import static com.reviewgenius.agent.enums.ReflectionDecision.RETRY;
-
 @Component
 @Slf4j
 public class DefaultRetryEngine implements RetryEngine {
-  @Value("${agent.retry.maxRetries:2}")
+  @Value("${agent.retry.maxRetries:3}")
   private int maxRetries;
-
   @Override
   public RetryDecision evaluateRetry(ActionType actionType, ReflectionResult reflectionResult, AgentContext context) {
-    int currentRetryCount = context.getRetryCounts().getOrDefault(actionType, 0);
-    if (Objects.isNull(reflectionResult)
-        || reflectionResult.getDecision() != RETRY
-        || !actionType.isActionTypeRetryAble()
-        || currentRetryCount >= maxRetries) {
-      log.warn("Retry denied for action={} retryCount={}", actionType, currentRetryCount);
-      return RETRY_DENIED;
+    if (Objects.isNull(reflectionResult)) {
+      return RetryDecision.RETRY_DENIED;
     }
+
+    if (reflectionResult.getDecision() != ReflectionDecision.RETRY) {
+      return RetryDecision.RETRY_DENIED;
+    }
+
+    if (!actionType.isActionTypeRetryAble()) {
+      log.warn("Retry denied. Action is not retry-able: {}", actionType);
+      return RetryDecision.RETRY_DENIED;
+    }
+
+    int currentRetryCount = context.getRetryCounts().getOrDefault(actionType, 0);
+    if (currentRetryCount >= maxRetries) {
+      log.warn("Retry denied. Max retries exceeded for action={}", actionType);
+      return RetryDecision.RETRY_DENIED;
+    }
+
     context.getRetryCounts().put(actionType, currentRetryCount + 1);
     log.info("Retry allowed for action={} retryCount={}", actionType, currentRetryCount + 1);
     return RetryDecision.RETRY_ALLOWED;
