@@ -3,6 +3,7 @@ package com.reviewgenius.agent.observability.execution;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.reviewgenius.agent.core.act.ActionResultStatus;
 import com.reviewgenius.agent.enums.ActionType;
+import com.reviewgenius.agent.model.ReflectionResult;
 import lombok.*;
 
 import java.time.Instant;
@@ -21,4 +22,5 @@ public class ActionExecutionHistory {
   private long executionTimeMs;
   private String summary;
   private String errorMessage;
+  ReflectionResult reflectionResult;
 }

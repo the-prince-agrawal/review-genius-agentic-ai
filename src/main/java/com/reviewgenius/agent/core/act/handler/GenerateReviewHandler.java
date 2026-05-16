@@ -29,7 +29,7 @@ public class GenerateReviewHandler implements ActionHandler {
     return CodeReviewResponseDto.builder().issues(issues).build();
   }
 
-  private static ActionResult<List<Issue>> getSuccessResponse(List<Issue> review) {
+  private ActionResult<List<Issue>> getSuccessResponse(List<Issue> review) {
     return ActionResult.success(REVIEW_GENERATED_SUCCESS_MESSAGE, review);
   }
 

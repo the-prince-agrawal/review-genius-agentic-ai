@@ -95,6 +95,7 @@ public class AgentOrchestrator {
   }
 
   private boolean shouldStopWorkflow(ReflectionResult reflectionResult, RetryDecision retryDecision) {
+    // retry exhausted so stop the complete workflow and exit.
     return reflectionResult.getDecision() == ReflectionDecision.RETRY
         && retryDecision == RetryDecision.RETRY_DENIED;
   }
@@ -105,19 +106,10 @@ public class AgentOrchestrator {
 
   private boolean shouldStopExecution(AgentContext context, ActionResult<?> result,
       ReflectionResult reflectionResult) {
-    boolean shouldTerminate = result.getStatus() == ActionResultStatus.FAILURE
-        || context.isCompleted()
-        || reflectionResult.getDecision() == ReflectionDecision.FAIL;
-
-    if (shouldTerminate) {
-      log.info("Terminating workflow. status={}, reflectionDecision={}, completed={}",
-          result.getStatus(), reflectionResult.getDecision(), context.isCompleted());
-    }
-
-    return shouldTerminate;
+    return context.isCompleted() || reflectionResult.getDecision() == ReflectionDecision.FAIL;
   }
 
-  private static AgentContext buildContext(ReviewRequestDto input) {
+  private AgentContext buildContext(ReviewRequestDto input) {
     return AgentContext.builder()
         .executionHistories(new ArrayList<>())
         .retryCounts(new HashMap<>())

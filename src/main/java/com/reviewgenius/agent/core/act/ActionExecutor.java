@@ -36,9 +36,7 @@ public class ActionExecutor {
     ActionResult<?> result;
 
     try {
-
       result = handler.execute(context);
-
     } catch (Exception ex) {
       agentLogger.logStepFailure(actionType, ex);
       result = ActionResult.failure("Unexpected action execution failure", ex.getMessage());
@@ -51,7 +49,7 @@ public class ActionExecutor {
 
   }
 
-  private static void addExecutionHistory(AgentContext context, ActionType actionType,
+  private void addExecutionHistory(AgentContext context, ActionType actionType,
       ActionResult<?> result, Instant startedAt, Instant completedAt) {
     long executionTimeMs = 0;
     if (startedAt != null && completedAt != null) {
