@@ -74,7 +74,7 @@ public class AgentOrchestrator {
         retry = true;
       }
 
-      if (shouldStopExecution(context, actionResult, reflectionResult)) {
+      if (shouldStopExecution(context, reflectionResult)) {
         return;
       }
     } while (retry);
@@ -106,8 +106,7 @@ public class AgentOrchestrator {
     return retryDecision == RetryDecision.RETRY_ALLOWED;
   }
 
-  private boolean shouldStopExecution(AgentContext context, ActionResult<?> result,
-      ReflectionResult reflectionResult) {
+  private boolean shouldStopExecution(AgentContext context, ReflectionResult reflectionResult) {
     return context.isCompleted() || reflectionResult.getDecision() == ReflectionDecision.FAIL;
   }
 
