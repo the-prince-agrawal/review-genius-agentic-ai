@@ -24,10 +24,7 @@ public class RuleBasedReflectionEngine implements ReflectionEngine {
     reflectionResult.setReflectionType(ReflectionType.STRUCTURAL);
 
     if (Objects.isNull(result) || FAILURE.equals(result.getStatus())) {
-      String resultMessage = result != null ? result.getMessage() : "null";
-      String resultData = result != null && result.getData() != null ? result.getData().toString() : "null";
-      reflectionResult
-          .addProblem(actionType + "Action failed" + " with message: " + resultMessage + " and data: " + resultData);
+      reflectionResult.addProblem(buildFailureMessage(actionType, result));
       return getFailedResult(reflectionResult);
     }
 
@@ -91,5 +88,12 @@ public class RuleBasedReflectionEngine implements ReflectionEngine {
     reflectionResult.setConfidenceScore(0.35);
     reflectionResult.setReflectionSummary("Reflection detected problems");
     return reflectionResult;
+  }
+
+  private String buildFailureMessage(ActionType actionType, ActionResult<?> result) {
+    String actionName = actionType.name();
+    String resultMessage = result != null ? result.getMessage() : null;
+    String resultData = result != null && result.getData() != null ? result.getData().toString() : null;
+    return String.format("%s action failed with message='%s' and data='%s'", actionName, resultMessage, resultData);
   }
 }

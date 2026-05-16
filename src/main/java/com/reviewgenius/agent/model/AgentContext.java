@@ -29,4 +29,5 @@ public class AgentContext {
   private PromptVersion promptVersion;
   private List<ActionExecutionHistory> executionHistories;
   private Map<ActionType, Integer> retryCounts;
+  private boolean workflowFailed;
 }

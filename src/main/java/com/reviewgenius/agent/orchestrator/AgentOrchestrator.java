@@ -63,6 +63,7 @@ public class AgentOrchestrator {
       RetryDecision retryDecision = evaluateRetry(actionType, reflectionResult, context);
 
       if (shouldStopWorkflow(reflectionResult, retryDecision)) {
+        context.setWorkflowFailed(true);
         log.error("Workflow stopped. Retry denied after reflection failure. actionType={}", actionType);
         context.setCompleted(true);
         return;
@@ -87,6 +88,7 @@ public class AgentOrchestrator {
   private ReflectionResult reflectAction(ActionType actionType, ActionResult<?> result, AgentContext context) {
     ReflectionResult reflectionResult = reflectionEngine.reflect(actionType, result, context);
     reflectionLogger.logReflection(actionType, reflectionResult);
+    attachReflectionResultToLatestExecution(context, reflectionResult);
     return reflectionResult;
   }
 
@@ -116,6 +118,7 @@ public class AgentOrchestrator {
         .inputDto(input)
         .correlationId(TraceContext.getCorrelationId())
         .completed(false)
+        .workflowFailed(false)
         .build();
   }
 
@@ -129,8 +132,14 @@ public class AgentOrchestrator {
   }
 
   private ActionResultStatus getOverallStatus(AgentContext context) {
-    boolean hasFailure = context.getExecutionHistories()
-        .stream().anyMatch(history -> history.getStatus() == ActionResultStatus.FAILURE);
-    return hasFailure ? ActionResultStatus.FAILURE : ActionResultStatus.SUCCESS;
+    return context.isWorkflowFailed() ? ActionResultStatus.FAILURE : ActionResultStatus.SUCCESS;
+  }
+
+  private void attachReflectionResultToLatestExecution(AgentContext context, ReflectionResult reflectionResult) {
+    if (context.getExecutionHistories().isEmpty()) {
+      return;
+    }
+    int lastIndex = context.getExecutionHistories().size() - 1;
+    context.getExecutionHistories().get(lastIndex).setReflectionResult(reflectionResult);
   }
 }
