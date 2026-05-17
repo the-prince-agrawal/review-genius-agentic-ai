@@ -1,6 +1,6 @@
 package com.reviewgenius.agent.model;
 
-import com.reviewgenius.agent.core.think.prompt.PromptVersion;
+import com.reviewgenius.agent.core.think.prompt.ThinkEnginePromptVersion;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.observability.execution.ActionExecutionHistory;
 import lombok.AllArgsConstructor;
@@ -26,7 +26,7 @@ public class AgentContext {
   private CodeReviewResponseDto review;
   private boolean completed;
   private String correlationId;
-  private PromptVersion promptVersion;
+  private ThinkEnginePromptVersion thinkEnginePromptVersion;
   private List<ActionExecutionHistory> executionHistories;
   private Map<ActionType, Integer> retryCounts;
   private boolean workflowFailed;

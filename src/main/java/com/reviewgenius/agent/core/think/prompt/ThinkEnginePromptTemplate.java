@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum PromptTemplate {
+public enum ThinkEnginePromptTemplate {
 
   /*
    * ATTEMPT 1
@@ -15,7 +15,7 @@ public enum PromptTemplate {
    * WHY? - Let model think more freely initially - Better exploratory reasoning - Better issue discovery
    */
   REVIEW_PROMPT_V1(
-      PromptVersion.REVIEW_V1,
+      ThinkEnginePromptVersion.REVIEW_V1,
       """
           You are a senior software engineer performing a professional code review.
 
@@ -60,7 +60,7 @@ public enum PromptTemplate {
    * WHY? - Retry means previous response failed - Reduce creativity - Enforce JSON discipline - Reduce hallucination
    */
   REVIEW_PROMPT_V2(
-      PromptVersion.REVIEW_V2,
+      ThinkEnginePromptVersion.REVIEW_V2,
       """
           You are an expert staff-level engineer performing a STRICT enterprise code review.
 
@@ -121,7 +121,7 @@ public enum PromptTemplate {
    * used with chunk splitting
    */
   REVIEW_PROMPT_V3(
-      PromptVersion.REVIEW_V3,
+      ThinkEnginePromptVersion.REVIEW_V3,
       """
           You are a principal engineer performing a FINAL STRICT deterministic code review retry.
 
@@ -171,6 +171,6 @@ public enum PromptTemplate {
           %s
           """);
 
-  private final PromptVersion version;
+  private final ThinkEnginePromptVersion version;
   private final String template;
 }

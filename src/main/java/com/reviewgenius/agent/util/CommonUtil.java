@@ -8,7 +8,17 @@ import java.io.IOException;
 @Slf4j
 public class CommonUtil {
 
-  public static String getMockResponse(String fileName) {
+  public static String getAnalyzeCodeMockResponse(String fileName) {
+    try {
+      log.info("Loading dummy response from file: {}", fileName);
+      return new String(new ClassPathResource(fileName).getInputStream().readAllBytes());
+    } catch (IOException ex) {
+      log.error("Failed to load dummy response from file: {}", fileName, ex);
+      throw new RuntimeException("Failed to load dummy LLM response", ex);
+    }
+  }
+
+  public static String getSemanticReflectionMockResponse(String fileName) {
     try {
       log.info("Loading dummy response from file: {}", fileName);
       return new String(new ClassPathResource(fileName).getInputStream().readAllBytes());

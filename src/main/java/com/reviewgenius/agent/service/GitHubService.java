@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import static com.reviewgenius.agent.config.CacheConfig.LOGS_CACHE;
-import static com.reviewgenius.agent.util.CommonUtil.getMockResponse;
+import static com.reviewgenius.agent.util.CommonUtil.getAnalyzeCodeMockResponse;
 
 @Service
 public class GitHubService {
@@ -25,7 +25,7 @@ public class GitHubService {
   @Cacheable(value = LOGS_CACHE, key = "#input")
   public String fetchPullRequestDiff(String input) {
     if (isGithubRemoteFetchDisabled) {
-      return getMockResponse("static/mock-github-pr.patch");
+      return getAnalyzeCodeMockResponse("static/mock-github-pr.patch");
     }
     HttpEntity<Void> entity = getHeader();
     String diffUrl = getDiffUrl(input);

@@ -7,6 +7,7 @@ import com.reviewgenius.agent.model.ReflectionResult;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -22,5 +23,5 @@ public class ActionExecutionHistory {
   private long executionTimeMs;
   private String summary;
   private String errorMessage;
-  ReflectionResult reflectionResult;
+  List<ReflectionResult> reflectionResult;
 }

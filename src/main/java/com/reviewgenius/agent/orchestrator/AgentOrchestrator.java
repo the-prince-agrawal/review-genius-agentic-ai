@@ -2,8 +2,7 @@ package com.reviewgenius.agent.orchestrator;
 
 import com.reviewgenius.agent.core.act.ActionExecutor;
 import com.reviewgenius.agent.core.act.ActionResult;
-import com.reviewgenius.agent.core.act.ActionResultStatus;
-import com.reviewgenius.agent.core.reflect.ReflectionEngine;
+import com.reviewgenius.agent.core.reflect.ReflectionService;
 import com.reviewgenius.agent.core.retry.RetryDecision;
 import com.reviewgenius.agent.core.retry.RetryEngine;
 import com.reviewgenius.agent.core.think.ThinkEngine;
@@ -13,38 +12,28 @@ import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.ReflectionResult;
 import com.reviewgenius.agent.model.ReviewRequestDto;
 import com.reviewgenius.agent.observability.execution.AgentExecutionResult;
-import com.reviewgenius.agent.observability.logging.ReflectionLogger;
-import com.reviewgenius.agent.observability.trace.TraceContext;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 
 @Component
 @Slf4j
+@AllArgsConstructor
 public class AgentOrchestrator {
   private final ThinkEngine thinkEngine;
   private final ActionExecutor actionExecutor;
-  private final ReflectionEngine reflectionEngine;
-  private final ReflectionLogger reflectionLogger;
   private final RetryEngine retryEngine;
-
-  public AgentOrchestrator(ThinkEngine thinkEngine, ActionExecutor actionExecutor, ReflectionEngine reflectionEngine,
-      ReflectionLogger reflectionLogger, RetryEngine retryEngine) {
-    this.thinkEngine = thinkEngine;
-    this.actionExecutor = actionExecutor;
-    this.reflectionEngine = reflectionEngine;
-    this.reflectionLogger = reflectionLogger;
-    this.retryEngine = retryEngine;
-  }
+  private final ReflectionService reflectionService;
 
   public AgentExecutionResult runAgent(ReviewRequestDto input, boolean debug) {
     long startTime = System.currentTimeMillis();
-    AgentContext context = buildContext(input);
+    AgentContext context = OrchestratorMapper.buildContext(input);
     executeWorkflow(context);
     long totalExecutionTimeMs = System.currentTimeMillis() - startTime;
-    return buildExecutionResult(context, totalExecutionTimeMs, debug);
+    return OrchestratorMapper.buildExecutionResult(context, totalExecutionTimeMs, debug);
   }
 
   private void executeWorkflow(AgentContext context) {
@@ -59,7 +48,7 @@ public class AgentOrchestrator {
     do {
       retry = false;
       ActionResult<?> actionResult = executeAction(actionType, context);
-      ReflectionResult reflectionResult = reflectAction(actionType, actionResult, context);
+      ReflectionResult reflectionResult = reflect(actionType, actionResult, context);
       RetryDecision retryDecision = evaluateRetry(actionType, reflectionResult, context);
 
       if (shouldStopWorkflow(reflectionResult, retryDecision)) {
@@ -85,61 +74,42 @@ public class AgentOrchestrator {
     return actionExecutor.act(actionType, context);
   }
 
-  private ReflectionResult reflectAction(ActionType actionType, ActionResult<?> result, AgentContext context) {
-    ReflectionResult reflectionResult = reflectionEngine.reflect(actionType, result, context);
-    reflectionLogger.logReflection(actionType, reflectionResult);
-    attachReflectionResultToLatestExecution(context, reflectionResult);
-    return reflectionResult;
+  private ReflectionResult reflect(ActionType actionType, ActionResult<?> result, AgentContext context) {
+    List<ReflectionResult> reflectionResults = reflectionService.executeReflection(actionType, result, context);
+    attachReflectionResultToLatestExecution(context, reflectionResults);
+    if (CollectionUtils.isEmpty(reflectionResults)) {
+      return null;
+    }
+    return reflectionResults.getLast();
   }
 
   private RetryDecision evaluateRetry(ActionType actionType, ReflectionResult reflectionResult, AgentContext context) {
     return retryEngine.evaluateRetry(actionType, reflectionResult, context);
   }
 
-  private boolean shouldStopWorkflow(ReflectionResult reflectionResult, RetryDecision retryDecision) {
-    // retry exhausted so stop the complete workflow and exit.
-    return reflectionResult.getDecision() == ReflectionDecision.RETRY
-        && retryDecision == RetryDecision.RETRY_DENIED;
-  }
-
   private boolean isRetryAllowed(RetryDecision retryDecision) {
     return retryDecision == RetryDecision.RETRY_ALLOWED;
   }
 
+  private boolean shouldStopWorkflow(ReflectionResult reflectionResult, RetryDecision retryDecision) {
+    // retry exhausted so stop the complete workflow and exit.
+    return reflectionResult != null
+        && reflectionResult.getDecision() == ReflectionDecision.RETRY
+        && retryDecision == RetryDecision.RETRY_DENIED;
+  }
+
   private boolean shouldStopExecution(AgentContext context, ReflectionResult reflectionResult) {
-    return context.isCompleted() || reflectionResult.getDecision() == ReflectionDecision.FAIL;
+    // TODO check this as we are not where setting the Reflection decision as FAIL.
+    return context.isCompleted() ||
+        (reflectionResult != null && reflectionResult.getDecision() == ReflectionDecision.FAIL);
+
   }
 
-  private AgentContext buildContext(ReviewRequestDto input) {
-    return AgentContext.builder()
-        .executionHistories(new ArrayList<>())
-        .retryCounts(new HashMap<>())
-        .inputDto(input)
-        .analysis(new ArrayList<>())
-        .correlationId(TraceContext.getCorrelationId())
-        .completed(false)
-        .workflowFailed(false)
-        .build();
-  }
-
-  private AgentExecutionResult buildExecutionResult(AgentContext context, long totalExecutionTimeMs, boolean debug) {
-    return AgentExecutionResult.builder()
-        .finalReview(context.getReview())
-        .executionHistories(debug ? context.getExecutionHistories() : null)
-        .overallStatus(getOverallStatus(context))
-        .totalExecutionTimeMs(totalExecutionTimeMs)
-        .build();
-  }
-
-  private ActionResultStatus getOverallStatus(AgentContext context) {
-    return context.isWorkflowFailed() ? ActionResultStatus.FAILURE : ActionResultStatus.SUCCESS;
-  }
-
-  private void attachReflectionResultToLatestExecution(AgentContext context, ReflectionResult reflectionResult) {
+  private void attachReflectionResultToLatestExecution(AgentContext context, List<ReflectionResult> reflectionResults) {
     if (context.getExecutionHistories().isEmpty()) {
       return;
     }
     int lastIndex = context.getExecutionHistories().size() - 1;
-    context.getExecutionHistories().get(lastIndex).setReflectionResult(reflectionResult);
+    context.getExecutionHistories().get(lastIndex).setReflectionResult(reflectionResults);
   }
 }

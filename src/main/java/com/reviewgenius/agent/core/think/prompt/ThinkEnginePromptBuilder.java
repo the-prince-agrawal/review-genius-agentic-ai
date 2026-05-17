@@ -11,21 +11,21 @@ import static com.reviewgenius.agent.enums.ActionType.ANALYZE_CODE;
 
 @Service
 @Slf4j
-public class PromptBuilder {
+public class ThinkEnginePromptBuilder {
   public String buildCodeReviewPrompt(AgentContext context, String diffChunk) {
     if (!StringUtils.hasText(diffChunk)) {
       return "No code diff provided.";
     }
     Integer retryCount = context.getRetryCounts().getOrDefault(ANALYZE_CODE, 0);
-    PromptVersion version = PromptVersion.fromRetryAttempt(retryCount);
-    PromptTemplate template = getPromptTemplate(version);
-    context.setPromptVersion(version);
+    ThinkEnginePromptVersion version = ThinkEnginePromptVersion.fromRetryAttempt(retryCount);
+    ThinkEnginePromptTemplate template = getPromptTemplate(version);
+    context.setThinkEnginePromptVersion(version);
     log.info("Using prompt version: {}", version);
     return template.getTemplate().formatted(context.getInputDto().getReviewType(), diffChunk);
   }
 
-  private PromptTemplate getPromptTemplate(PromptVersion version) {
-    return Arrays.stream(PromptTemplate.values())
+  private ThinkEnginePromptTemplate getPromptTemplate(ThinkEnginePromptVersion version) {
+    return Arrays.stream(ThinkEnginePromptTemplate.values())
         .filter(template -> template.getVersion() == version)
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException("Unsupported prompt version: " + version));

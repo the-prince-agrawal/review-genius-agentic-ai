@@ -27,10 +27,13 @@ logging:
 
 agent:
   retry:
-    maxRetries: 3
+    maxRetries: 2
   analysis:
     chunk-size: 1000
   llm:
     client:
-      disabled: true
+      analyze-code:
+        disabled: true
+      semantic-reflection:
+        disabled: true
 

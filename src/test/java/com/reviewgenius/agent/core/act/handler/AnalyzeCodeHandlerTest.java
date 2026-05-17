@@ -3,7 +3,7 @@ package com.reviewgenius.agent.core.act.handler;
 import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.core.act.ActionResultStatus;
 import com.reviewgenius.agent.core.think.LLMClient;
-import com.reviewgenius.agent.core.think.prompt.PromptBuilder;
+import com.reviewgenius.agent.core.think.prompt.ThinkEnginePromptBuilder;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.ReviewRequestDto;
 import org.junit.jupiter.api.Disabled;
@@ -25,7 +25,7 @@ class AnalyzeCodeHandlerTest {
   private LLMClient llmClient;
 
   @Mock
-  private PromptBuilder promptBuilder;
+  private ThinkEnginePromptBuilder thinkEnginePromptBuilder;
 
   @InjectMocks
   private AnalyzeCodeHandler analyzeCodeHandler;
@@ -34,7 +34,7 @@ class AnalyzeCodeHandlerTest {
   @Disabled
   void testExecute() {
     AgentContext context = getAgentContext();
-    doCallRealMethod().when(promptBuilder).buildCodeReviewPrompt(context, "chunk");
+    doCallRealMethod().when(thinkEnginePromptBuilder).buildCodeReviewPrompt(context, "chunk");
     when(llmClient.getResponse(anyString())).thenReturn(getAnalysisResult());
     ActionResult<?> actionResult = analyzeCodeHandler.execute(context);
     assertEquals(ActionResultStatus.SUCCESS, actionResult.getStatus());
