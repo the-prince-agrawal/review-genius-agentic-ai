@@ -25,6 +25,7 @@ public class ReflectionResult {
   private ReflectionDecision decision;
   private ReflectionType reflectionType;
   private String reflectionEngine;
+  private Long totalExecutionTimeMs;
 
   public void addProblem(String problem) {
     this.detectedProblems.add(problem);

@@ -14,10 +14,6 @@ spring:
   #      chat:
   #        model: deepseek-r1:8b
 
-github:
-  token: ${LOG_INTELLIGENCE_GITHUB_ACCESS_TOKEN_FOR_PR_REVIEW}
-  remoteFetchDisabled: true
-
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%X{correlationId}] %-5level %logger{36} - %msg%n"
@@ -25,11 +21,15 @@ logging:
     org.springframework.web: WARN
     org.apache.catalina: WARN
 
+github:
+  token: ${LOG_INTELLIGENCE_GITHUB_ACCESS_TOKEN_FOR_PR_REVIEW}
+  remoteFetchDisabled: true
+
 agent:
   retry:
     maxRetries: 2
   analysis:
-    chunk-size: 1000
+    chunk-size: 2000
   llm:
     client:
       analyze-code:

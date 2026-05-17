@@ -31,7 +31,7 @@ public class SemanticAnalysisReflectionEngine extends AbstractReflectionEngine {
 
     ReflectionResult reflectionResult = buildReflectionResult(agentResponse, SEMANTIC,
         getClass().getSimpleName());
-
+    // TODO instead decide here based on confidence %age
     if (CollectionUtils.isEmpty(reflectionResult.getDetectedProblems())) {
       return buildSuccessResult(reflectionResult);
     } else {

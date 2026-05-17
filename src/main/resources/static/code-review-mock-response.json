@@ -1,16 +1,100 @@
 [
   {
-    "fileName": "src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java",
-    "lineNumber": 10,
+    "fileName": "src/main/java/com/reviewgenius/agent/core/act/handler/FetchPRHandler.java",
+    "lineNumber": 0,
     "severity": "MEDIUM",
-    "description": "Using ConcurrentMapCacheManager may not be suitable for high concurrency scenarios.",
-    "suggestion": "Consider using a more robust cache manager like EhCache or Redis for better performance under load."
+    "description": "Redundant failure messages in ActionResult.",
+    "suggestion": "Consolidate the failure messages to avoid multiple return statements that could lead to performance overhead in error handling."
   },
   {
-    "fileName": "src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java",
-    "lineNumber": 5,
+    "fileName": "src/main/java/com/reviewgenius/agent/core/act/handler/ParseDiffHandler.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "Repeated calls to 'contains' method on the normalized string can lead to performance issues, especially if the string is large.",
+    "suggestion": "Consider using a single pass to check for the presence of 'File:', 'Added:', and 'Removed:' to reduce the number of scans on the string."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/core/act/handler/ParseDiffHandler.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "The split operation creates an array of strings which may lead to increased memory usage if the input is large.",
+    "suggestion": "Consider using a more memory-efficient approach, such as processing the lines in a stream or using a StringTokenizer."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/core/act/handler/ParseDiffHandler.java",
+    "lineNumber": 0,
     "severity": "LOW",
-    "description": "Cacheable annotation may lead to cache stampede if not properly configured.",
-    "suggestion": "Ensure proper cache configuration and consider using cache locking mechanisms."
+    "description": "The check for meaningful content only looks for lines starting with '- ' which may not cover all cases of meaningful changes.",
+    "suggestion": "Enhance the logic to identify other types of meaningful changes or provide a more comprehensive check."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/core/reflect/RuleBasedReflectionEngine.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "The use of Objects.isNull(result) introduces a slight overhead compared to a simple null check (result == null).",
+    "suggestion": "Replace Objects.isNull(result) with a direct null check (result == null) for better performance."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/core/reflect/RuleBasedReflectionEngine.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "The method getFailedResult is called multiple times in a conditional block, which can lead to unnecessary processing if the condition is met early.",
+    "suggestion": "Refactor the code to ensure getFailedResult is called only once per execution path."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/core/retry/DefaultRetryEngine.java",
+    "lineNumber": 15,
+    "severity": "MEDIUM",
+    "description": "The method context.getRetryCounts() is called multiple times, which may lead to performance issues if it involves a costly operation.",
+    "suggestion": "Store the result of context.getRetryCounts() in a local variable to avoid multiple calls."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/core/retry/DefaultRetryEngine.java",
+    "lineNumber": 20,
+    "severity": "MEDIUM",
+    "description": "The use of Objects.isNull() can be less performant than a direct null check.",
+    "suggestion": "Replace Objects.isNull(reflectionResult) with reflectionResult == null for better performance."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/model/AgentContext.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "Using Map<ActionType, Integer> for retry counts may lead to performance issues due to the overhead of enum lookups.",
+    "suggestion": "Consider using an array or a primitive data structure if the number of ActionTypes is fixed and known."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/model/AgentContext.java",
+    "lineNumber": 0,
+    "severity": "LOW",
+    "description": "The TODO comment suggests creating inner classes for better organization, which may lead to unnecessary complexity if not implemented properly.",
+    "suggestion": "Ensure that the proposed inner classes are necessary and will not introduce performance overhead or complexity."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/orchestrator/AgentOrchestrator.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "The use of a HashMap for retry counts may lead to unnecessary memory overhead if the number of retries is low or fixed.",
+    "suggestion": "Consider using an array or a primitive type if the number of retries is known and limited."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/orchestrator/AgentOrchestrator.java",
+    "lineNumber": 0,
+    "severity": "HIGH",
+    "description": "The commented-out logic suggests a potential infinite loop if not handled correctly, especially with the proposed do-while loop.",
+    "suggestion": "Implement proper exit conditions and ensure that the loop can terminate to avoid performance degradation."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/orchestrator/AgentOrchestrator.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "The evaluation of retry decisions and logging occurs in a potentially tight loop, which can lead to performance issues if the loop iterates many times.",
+    "suggestion": "Consider batching log messages or reducing the frequency of logging within the retry loop to improve performance."
+  },
+  {
+    "fileName": "src/main/java/com/reviewgenius/agent/util/IssueParserUtil.java",
+    "lineNumber": 0,
+    "severity": "MEDIUM",
+    "description": "The removal of the intermediate variable 'cleanedJson' may lead to performance issues if 'cleanJson(json)' is computationally expensive.",
+    "suggestion": "Reintroduce the 'cleanedJson' variable to avoid potential repeated calls to 'cleanJson(json)' and improve readability."
   }
 ]

@@ -10,31 +10,86 @@ public enum ThinkEnginePromptTemplate {
   /*
    * ATTEMPT 1
    *
-   * MODEL : gpt-4o TEMPERATURE : 0.7 GOAL : Broad intelligent analysis STRICTNESS : Medium
+   * MODEL : gpt-4o TEMPERATURE : 0.5 GOAL : Balanced high-quality practical review STRICTNESS : Medium
    *
-   * WHY? - Let model think more freely initially - Better exploratory reasoning - Better issue discovery
+   * WHY? - Initial broad review pass - Allow useful engineering observations - Suppress hallucinations and noisy
+   * findings - Encourage practical and evidence-based reviews - Avoid over-filtering valid concerns
    */
   REVIEW_PROMPT_V1(
       ThinkEnginePromptVersion.REVIEW_V1,
       """
-          You are a senior software engineer performing a professional code review.
+          You are a senior staff engineer performing a professional production-grade code review.
 
-          Analyze the following code diff carefully and identify meaningful issues.
+          Analyze the following code diff carefully and identify meaningful engineering issues.
 
           Focus Area:
           %s
 
-          Review Rules:
-          - Focus on bugs, performance, security, concurrency, maintainability, and bad practices
-          - Ignore formatting and trivial style issues
+          CORE REVIEW RULES:
+          - Report ONLY practically meaningful issues
+          - Every finding MUST have evidence from the diff
+          - Prefer precision over quantity
+          - Avoid duplicate findings
           - Avoid generic recommendations
-          - Be concise and technical
-          - Return ONLY raw JSON
-          - Do NOT wrap response in markdown
-          - Do NOT use ```json
-          - Do NOT add explanation text outside JSON
+          - Do NOT invent missing implementation details
+          - Do NOT assume unrealistic production scale unless clearly implied
+          - Ignore formatting and stylistic concerns
 
-          Return ONLY valid JSON array:
+          VALID FINDINGS:
+          - Real bugs
+          - Retry handling risks
+          - Infinite retry possibilities
+          - Concurrency issues
+          - Resource leaks
+          - Broken resiliency logic
+          - Transactional correctness issues
+          - API contract violations
+          - Incorrect state handling
+          - Error propagation problems
+          - Scalability concerns with realistic impact
+          - Expensive operations inside loops
+          - Security vulnerabilities
+
+          AVOID REPORTING:
+          - Minor JVM micro-optimizations
+          - Objects.isNull vs == null
+          - Small contains() calls
+          - Simple split() usage
+          - Getter repetition
+          - Small allocations
+          - Standard HashMap/EnumMap usage
+          - Readability-only refactors
+          - Generic maintainability comments
+          - Theoretical scalability concerns
+          - Commented-out code treated as active runtime logic
+
+          PERFORMANCE REVIEW GUIDANCE:
+          - Report performance concerns ONLY if realistically meaningful
+          - Prefer architectural and algorithmic concerns over micro-optimizations
+          - Ignore negligible JVM-level optimizations
+
+          SEVERITY GUIDELINES:
+          - HIGH:
+            Production failure, security issue, retry explosion, concurrency bug, data corruption
+
+          - MEDIUM:
+            Real resiliency issue, scalability concern, maintainability risk, inefficient logic
+
+          - LOW:
+            Meaningful but lower-impact improvement
+
+          RESPONSE RULES:
+          - Return ONLY VALID RAW JSON
+          - Response MUST be parsable by Jackson ObjectMapper
+          - NO markdown
+          - NO comments
+          - NO explanation text
+          - NO extra text before JSON
+          - NO extra text after JSON
+          - Output MUST start with '['
+          - Output MUST end with ']'
+
+          REQUIRED RESPONSE FORMAT:
           [
             {
               "fileName": "",
@@ -45,8 +100,10 @@ public enum ThinkEnginePromptTemplate {
             }
           ]
 
-          If no issues are found return:
-          []
+          IMPORTANT:
+          - Return [] if no meaningful issues exist
+          - Prefer fewer strong findings over many weak findings
+          - Do NOT force findings
 
           Code Diff:
           %s
@@ -55,46 +112,76 @@ public enum ThinkEnginePromptTemplate {
   /*
    * ATTEMPT 2 (FIRST RETRY)
    *
-   * MODEL : gpt-4o TEMPERATURE : 0.3 GOAL : Stable structured response STRICTNESS : High
+   * MODEL : gpt-4o TEMPERATURE : 0.2 GOAL : Strict evidence-based retry review STRICTNESS : High
    *
-   * WHY? - Retry means previous response failed - Reduce creativity - Enforce JSON discipline - Reduce hallucination
+   * WHY? - Previous response may contain weak findings - Reduce hallucinations aggressively - Improve semantic quality
+   * - Produce deterministic retry-safe output - Suppress speculative engineering concerns
    */
   REVIEW_PROMPT_V2(
       ThinkEnginePromptVersion.REVIEW_V2,
       """
-          You are an expert staff-level engineer performing a STRICT enterprise code review.
+          You are a principal engineer performing a strict enterprise code review retry.
 
-          Analyze the following code diff and identify ONLY highly confident and meaningful issues.
+          Previous review attempt produced weak, noisy, duplicated, or speculative findings.
+
+          Analyze the following diff and report ONLY highly confident engineering concerns.
 
           Focus Area:
           %s
 
-          STRICT REVIEW RULES:
-          - Detect ONLY real bugs, security risks, concurrency issues, scalability concerns, and performance bottlenecks
-          - Ignore formatting, naming preferences, and subjective style suggestions
-          - Avoid generic recommendations
-          - Do NOT hallucinate missing context
-          - Prefer precision over quantity
-          - Avoid duplicate findings
-          - Suggestions must be concrete and actionable
+          STRICT ANALYSIS RULES:
+          - Every finding MUST be directly supported by the diff
+          - Reject speculative reasoning
+          - Reject weak or low-value findings
+          - Reject duplicate concerns
+          - Reject theoretical micro-optimizations
+          - Prefer practical production-impacting concerns
+          - Prefer fewer stronger findings
 
-          CRITICAL RESPONSE RULES:
+          DO NOT REPORT:
+          - Objects.isNull vs == null
+          - contains() performance concerns
+          - split() allocation concerns
+          - Getter repetition
+          - Small HashMap overhead
+          - Minor allocations
+          - Generic maintainability suggestions
+          - Readability-only improvements
+          - Stylistic concerns
+          - Premature optimization suggestions
+          - Commented-out code as active runtime risk
+
+          VALID FINDINGS:
+          - Infinite retry risks
+          - Broken retry termination logic
+          - Resource leakage
+          - Concurrency issues
+          - Transactional correctness problems
+          - Broken resiliency logic
+          - Incorrect state transitions
+          - Real scalability bottlenecks
+          - Security vulnerabilities
+          - Error handling flaws
+
+          PERFORMANCE RULES:
+          - Performance findings MUST be practically meaningful
+          - Ignore negligible JVM-level concerns
+          - Prefer architectural concerns over syntax-level optimizations
+
+          RESPONSE RULES:
           - Return ONLY VALID RAW JSON
-          - Response MUST be parsable by Jackson ObjectMapper
-          - Do NOT wrap response in markdown
-          - Do NOT use ```json
-          - Do NOT add comments
-          - Do NOT add explanation text
-          - Do NOT return invalid escaping
+          - MUST be parsable by Jackson
+          - NO markdown
+          - NO comments
+          - NO explanation text
+          - NO trailing commas
+          - NO invalid escaping
+          - NO extra text before JSON
+          - NO extra text after JSON
           - Output MUST start with '['
           - Output MUST end with ']'
 
-          Severity Guidelines:
-          - HIGH   -> production bug, security issue, data corruption, concurrency issue
-          - MEDIUM -> scalability, maintainability, retry risk, performance concern
-          - LOW    -> minor improvement with low impact
-
-          Return ONLY valid JSON array:
+          REQUIRED RESPONSE FORMAT:
           [
             {
               "fileName": "",
@@ -105,8 +192,10 @@ public enum ThinkEnginePromptTemplate {
             }
           ]
 
-          If no issues are found return:
-          []
+          IMPORTANT:
+          - Return [] if no meaningful issues exist
+          - High-confidence findings ONLY
+          - Do NOT force findings
 
           Code Diff:
           %s
@@ -115,45 +204,71 @@ public enum ThinkEnginePromptTemplate {
   /*
    * ATTEMPT 3 (FINAL RETRY)
    *
-   * MODEL : gpt-4.1-mini (fallback) TEMPERATURE : 0.1 GOAL : Maximum deterministic stability STRICTNESS : VERY HIGH
+   * MODEL : gpt-4.1-mini TEMPERATURE : 0.1 GOAL : Maximum deterministic validation-safe response STRICTNESS : Very High
    *
-   * WHY? - Previous attempts failed - Need deterministic output - Prioritize parsable JSON over creativity - Usually
-   * used with chunk splitting
+   * WHY? - Previous attempts failed semantic validation - Prioritize correctness over creativity - Eliminate
+   * hallucinations aggressively - Produce stable retry-safe JSON - Prefer empty array over weak findings
    */
   REVIEW_PROMPT_V3(
       ThinkEnginePromptVersion.REVIEW_V3,
       """
-          You are a principal engineer performing a FINAL STRICT deterministic code review retry.
+          You are a principal engineer performing a FINAL deterministic validation-grade code review.
 
-          Previous responses failed validation.
+          Previous attempts produced invalid, speculative, duplicated, or low-quality findings.
 
-          You MUST return STRICTLY VALID JSON ONLY.
+          Your task:
+          Return ONLY highly confident production-relevant engineering concerns.
 
           Focus Area:
           %s
 
-          CRITICAL ANALYSIS RULES:
-          - Report ONLY highly confident issues
-          - Do NOT invent hypothetical problems
-          - Ignore formatting and subjective suggestions
-          - Keep findings concise and technical
-          - Avoid duplicate findings
-          - Prefer fewer HIGH QUALITY findings
+          ABSOLUTE ANALYSIS RULES:
+          - Report ONLY issues with direct evidence from the diff
+          - Reject speculative concerns
+          - Reject duplicate findings
+          - Reject generic recommendations
+          - Reject theoretical JVM optimizations
+          - Prefer EMPTY ARRAY over weak findings
+          - Prefer correctness over quantity
 
-          ABSOLUTE RESPONSE REQUIREMENTS:
+          STRICTLY FORBIDDEN FINDINGS:
+          - Objects.isNull vs == null
+          - contains() overhead
+          - split() allocation concerns
+          - HashMap overhead
+          - Getter repetition
+          - Minor allocations
+          - Readability-only improvements
+          - Style concerns
+          - Generic maintainability comments
+          - Theoretical scalability concerns
+          - Commented-out code treated as runtime behavior
+
+          VALID FINDINGS ONLY:
+          - Infinite retry risks
+          - Broken retry orchestration
+          - Resource leakage
+          - Concurrency issues
+          - Broken resiliency logic
+          - Incorrect state handling
+          - Security vulnerabilities
+          - Real algorithmic inefficiency
+          - Transaction correctness issues
+          - Production-impacting bugs
+
+          RESPONSE REQUIREMENTS:
           - Return ONLY VALID JSON ARRAY
-          - JSON MUST be parsable by Jackson
+          - MUST be parsable by Jackson
           - NO markdown
           - NO comments
           - NO explanation text
           - NO invalid escaping
           - NO trailing commas
-          - NO extra text before JSON
-          - NO extra text after JSON
+          - NO extra output
           - Output MUST start with '['
           - Output MUST end with ']'
 
-          REQUIRED JSON FORMAT:
+          REQUIRED RESPONSE FORMAT:
           [
             {
               "fileName": "",
@@ -164,8 +279,10 @@ public enum ThinkEnginePromptTemplate {
             }
           ]
 
-          If no issues are found return:
-          []
+          IMPORTANT:
+          - EMPTY ARRAY [] is acceptable
+          - Do NOT force findings
+          - Only meaningful engineering concerns are allowed
 
           Code Diff:
           %s
