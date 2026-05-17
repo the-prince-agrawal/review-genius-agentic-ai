@@ -1,56 +1,528 @@
-diff --git a/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java b/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java
-index 52290e8..a01b505 100644
---- a/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java
-+++ b/src/main/java/com/princeagrawal/ai/logintelligence/config/CacheConfig.java
-@@ -1,4 +1,19 @@
-package com.princeagrawal.ai.logintelligence.config;
+diff --git a/src/main/java/com/reviewgenius/agent/core/act/ActionExecutor.java b/src/main/java/com/reviewgenius/agent/core/act/ActionExecutor.java
+index f251edd..df0acc6 100644
+--- a/src/main/java/com/reviewgenius/agent/core/act/ActionExecutor.java
++++ b/src/main/java/com/reviewgenius/agent/core/act/ActionExecutor.java
+@@ -34,8 +34,11 @@ public ActionResult<?> act(ActionType actionType, AgentContext context) {
+     Instant startedAt = Instant.now();
+     agentLogger.logStepStart(actionType);
+     ActionResult<?> result;
++
+     try {
++
+       result = handler.execute(context);
++
+     } catch (Exception ex) {
+       agentLogger.logStepFailure(actionType, ex);
+       result = ActionResult.failure("Unexpected action execution failure", ex.getMessage());
+diff --git a/src/main/java/com/reviewgenius/agent/core/act/handler/AnalyzeCodeHandler.java b/src/main/java/com/reviewgenius/agent/core/act/handler/AnalyzeCodeHandler.java
+index a9f6841..0aeb38a 100644
+--- a/src/main/java/com/reviewgenius/agent/core/act/handler/AnalyzeCodeHandler.java
++++ b/src/main/java/com/reviewgenius/agent/core/act/handler/AnalyzeCodeHandler.java
+@@ -40,6 +40,7 @@ public ActionResult<?> execute(AgentContext context) {
+       return ActionResult.success("Code analyzed",
+           Map.of("analysisResult", analysisResult, "issueCount", issues.size()));
+     } catch (Exception ex) {
++      log.error("Error during code analysis: {}", ex.getMessage(), ex);
+       return ActionResult.failure("Action execution failed", ex.getMessage());
+     }
+   }
+diff --git a/src/main/java/com/reviewgenius/agent/core/act/handler/FetchPRHandler.java b/src/main/java/com/reviewgenius/agent/core/act/handler/FetchPRHandler.java
+index 722eb89..7cac3ae 100644
+--- a/src/main/java/com/reviewgenius/agent/core/act/handler/FetchPRHandler.java
++++ b/src/main/java/com/reviewgenius/agent/core/act/handler/FetchPRHandler.java
+@@ -29,18 +29,15 @@ public ActionResult<String> execute(AgentContext context) {
+       String diff = gitHubService.fetchPullRequestDiff(prUrl);
+       if (!StringUtils.hasText(diff)) {
+         log.error("Received empty diff from GitHub");
+-        return ActionResult.failure(
+-            "Failed to fetch PR",
+-            "GitHub returned empty diff");
++        return ActionResult.failure("Failed to fetch PR", "GitHub returned empty diff");
+       }
 
-+import org.springframework.cache.CacheManager;
-+import org.springframework.cache.annotation.EnableCaching;
-+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
-+import org.springframework.context.annotation.Bean;
-+import org.springframework.context.annotation.Configuration;
+       context.setRawDiff(diff);
+       return ActionResult.success("PR fetched successfully", diff);
 +
-+@Configuration
-+@EnableCaching
-public class CacheConfig {
--}
-+
-+    public static final String LOGS_CACHE = "logs";
-+
-+    @Bean
-+    public CacheManager cacheManager() {
-+        return new ConcurrentMapCacheManager(LOGS_CACHE, "responses");
+     } catch (Exception ex) {
+       log.error("Error while fetching PR diff", ex);
+-      return ActionResult.failure(
+-          "Failed to fetch PR",
+-          ex.getMessage());
++      return ActionResult.failure("Failed to fetch PR", ex.getMessage());
+     }
+   }
+
+diff --git a/src/main/java/com/reviewgenius/agent/core/act/handler/ParseDiffHandler.java b/src/main/java/com/reviewgenius/agent/core/act/handler/ParseDiffHandler.java
+index 17e6421..3abe328 100644
+--- a/src/main/java/com/reviewgenius/agent/core/act/handler/ParseDiffHandler.java
++++ b/src/main/java/com/reviewgenius/agent/core/act/handler/ParseDiffHandler.java
+@@ -29,8 +29,44 @@ public ActionResult<String> execute(AgentContext context) {
+
+   private void validateParsedDiff(String parsedDiff) {
+     if (!StringUtils.hasText(parsedDiff)) {
++      throw new IllegalStateException("Parsed diff is empty");
 +    }
-+}
-\ No newline at end of file
-diff --git a/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java b/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java
-index 38451ab..9c0db0b 100644
---- a/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java
-+++ b/src/main/java/com/princeagrawal/ai/logintelligence/service/LogAnalysisService.java
-@@ -4,13 +4,15 @@
-import com.princeagrawal.ai.logintelligence.mapper.response.ResponseMapper;
-import com.princeagrawal.ai.logintelligence.model.response.LogResponseDto;
-import org.springframework.ai.chat.client.ChatClient;
-+import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Service;
-
-+import static com.princeagrawal.ai.logintelligence.config.CacheConfig.LOGS_CACHE;
 +
-@Service
-public class LogAnalysisService {
-private final RequestMapper requestMapper;
-private final ResponseMapper responseMapper;
--
-private final ChatClient chatClient;
++    String normalized = parsedDiff.trim();
++    // Detect placeholder / useless formatted output
++    if ("----------------------".equals(normalized)) {
++      throw new IllegalStateException("Parsed diff does not contain meaningful content");
++    }
++
++    boolean hasFile = normalized.contains("File:");
++    boolean hasAdded = normalized.contains("Added:");
++    boolean hasRemoved = normalized.contains("Removed:");
++
++    // Must contain at least one file
++    if (!hasFile) {
+       throw new IllegalStateException(
+-          "Parsed diff is empty");
++          "No files detected in parsed diff");
++    }
++
++    // Must contain actual code changes
++    if (!hasAdded && !hasRemoved) {
++      throw new IllegalStateException(
++          "No code changes detected in parsed diff");
++    }
++
++    String[] lines = normalized.split("\n");
++    boolean hasActualContent = false;
++
++    for (String line : lines) {
++      String trimmed = line.trim();
++      if (trimmed.startsWith("- ") && trimmed.length() > 2) {
++        hasActualContent = true;
++        break;
++      }
++    }
++
++    if (!hasActualContent) {
++      throw new IllegalStateException("Parsed diff contains no meaningful code lines");
+     }
+   }
 
-public LogAnalysisService(RequestMapper requestMapper, ResponseMapper responseMapper, ChatClient.Builder builder) {
-@@ -18,7 +20,7 @@ public LogAnalysisService(RequestMapper requestMapper, ResponseMapper responseMa
-this.responseMapper = responseMapper;
-this.chatClient = builder.build();
-}
+diff --git a/src/main/java/com/reviewgenius/agent/core/reflect/RuleBasedReflectionEngine.java b/src/main/java/com/reviewgenius/agent/core/reflect/RuleBasedReflectionEngine.java
+index c6d1690..a5d90dc 100644
+--- a/src/main/java/com/reviewgenius/agent/core/reflect/RuleBasedReflectionEngine.java
++++ b/src/main/java/com/reviewgenius/agent/core/reflect/RuleBasedReflectionEngine.java
+@@ -11,19 +11,21 @@
+
+ import java.util.HashSet;
+ import java.util.List;
++import java.util.Objects;
+ import java.util.Set;
+
++import static com.reviewgenius.agent.core.act.ActionResultStatus.FAILURE;
++
+ @Component
+ public class RuleBasedReflectionEngine implements ReflectionEngine {
+   @Override
+   public ReflectionResult reflect(ActionType actionType, ActionResult<?> result, AgentContext context) {
+     ReflectionResult reflectionResult = new ReflectionResult();
 -
-+    @Cacheable(LOGS_CACHE)
-public LogResponseDto analyzeLogs(String inputErrorLog) {
-String requestPrompt = requestMapper.mapInputErrorLogToRequestDto(inputErrorLog);
-String response = chatClient.prompt().user(requestPrompt).call().content();
+     reflectionResult.setReflectionType(ReflectionType.STRUCTURAL);
+
+-    if (result == null) {
+-      reflectionResult.addProblem("ActionResult is null");
+-      return fail(reflectionResult);
++    if (Objects.isNull(result) || FAILURE.equals(result.getStatus())) {
++      reflectionResult.addProblem("Action failed");
++      return getFailedResult(reflectionResult);
+     }
+
+     if (actionType == ActionType.ANALYZE_CODE) {
+@@ -31,14 +33,17 @@ public ReflectionResult reflect(ActionType actionType, ActionResult<?> result, A
+     }
+
+     if (reflectionResult.getDetectedProblems().isEmpty()) {
+-      reflectionResult.setPassed(true);
+-      reflectionResult.setDecision(ReflectionDecision.ACCEPT);
+-      reflectionResult.setConfidenceScore(0.95);
+-      reflectionResult.setReflectionSummary("Reflection passed successfully");
+-      return reflectionResult;
++      return getSuccessResult(reflectionResult);
+     }
++    return getFailedResult(reflectionResult);
++  }
+
+-    return fail(reflectionResult);
++  private static ReflectionResult getSuccessResult(ReflectionResult reflectionResult) {
++    reflectionResult.setPassed(true);
++    reflectionResult.setDecision(ReflectionDecision.ACCEPT);
++    reflectionResult.setConfidenceScore(0.95);
++    reflectionResult.setReflectionSummary("Reflection passed successfully");
++    return reflectionResult;
+   }
+
+   private void validateAnalyzeCode(AgentContext context, ReflectionResult reflectionResult) {
+@@ -76,7 +81,7 @@ private void validateAnalyzeCode(AgentContext context, ReflectionResult reflecti
+     }
+   }
+
+-  private ReflectionResult fail(ReflectionResult reflectionResult) {
++  private ReflectionResult getFailedResult(ReflectionResult reflectionResult) {
+     reflectionResult.setPassed(false);
+     reflectionResult.setRetryRecommended(true);
+     reflectionResult.setDecision(ReflectionDecision.RETRY);
+diff --git a/src/main/java/com/reviewgenius/agent/core/retry/DefaultRetryEngine.java b/src/main/java/com/reviewgenius/agent/core/retry/DefaultRetryEngine.java
+new file mode 100644
+index 0000000..08755bc
+--- /dev/null
++++ b/src/main/java/com/reviewgenius/agent/core/retry/DefaultRetryEngine.java
+@@ -0,0 +1,36 @@
++package com.reviewgenius.agent.core.retry;
++
++import com.reviewgenius.agent.enums.ActionType;
++import com.reviewgenius.agent.enums.ReflectionDecision;
++import com.reviewgenius.agent.model.AgentContext;
++import com.reviewgenius.agent.model.ReflectionResult;
++import lombok.extern.slf4j.Slf4j;
++import org.springframework.beans.factory.annotation.Value;
++import org.springframework.stereotype.Component;
++
++import java.util.Objects;
++
++import static com.reviewgenius.agent.core.retry.RetryDecision.RETRY_DENIED;
++import static com.reviewgenius.agent.enums.ReflectionDecision.RETRY;
++
++@Component
++@Slf4j
++public class DefaultRetryEngine implements RetryEngine {
++  @Value("${agent.retry.maxRetries:2}")
++  private int maxRetries;
++
++  @Override
++  public RetryDecision evaluateRetry(ActionType actionType, ReflectionResult reflectionResult, AgentContext context) {
++    int currentRetryCount = context.getRetryCounts().getOrDefault(actionType, 0);
++    if (Objects.isNull(reflectionResult)
++        || reflectionResult.getDecision() != RETRY
++        || !actionType.isActionTypeRetryAble()
++        || currentRetryCount >= maxRetries) {
++      log.warn("Retry denied for action={} retryCount={}", actionType, currentRetryCount);
++      return RETRY_DENIED;
++    }
++    context.getRetryCounts().put(actionType, currentRetryCount + 1);
++    log.info("Retry allowed for action={} retryCount={}", actionType, currentRetryCount + 1);
++    return RetryDecision.RETRY_ALLOWED;
++  }
++}
+diff --git a/src/main/java/com/reviewgenius/agent/core/retry/RetryDecision.java b/src/main/java/com/reviewgenius/agent/core/retry/RetryDecision.java
+new file mode 100644
+index 0000000..dfa0ab2
+--- /dev/null
++++ b/src/main/java/com/reviewgenius/agent/core/retry/RetryDecision.java
+@@ -0,0 +1,5 @@
++package com.reviewgenius.agent.core.retry;
++
++public enum RetryDecision {
++  RETRY_ALLOWED, RETRY_DENIED
++}
+diff --git a/src/main/java/com/reviewgenius/agent/core/retry/RetryEngine.java b/src/main/java/com/reviewgenius/agent/core/retry/RetryEngine.java
+new file mode 100644
+index 0000000..c8d11c5
+--- /dev/null
++++ b/src/main/java/com/reviewgenius/agent/core/retry/RetryEngine.java
+@@ -0,0 +1,9 @@
++package com.reviewgenius.agent.core.retry;
++
++import com.reviewgenius.agent.enums.ActionType;
++import com.reviewgenius.agent.model.AgentContext;
++import com.reviewgenius.agent.model.ReflectionResult;
++
++public interface RetryEngine {
++  RetryDecision evaluateRetry(ActionType actionType, ReflectionResult reflectionResult, AgentContext context);
++}
+diff --git a/src/main/java/com/reviewgenius/agent/core/think/prompt/PromptTemplate.java b/src/main/java/com/reviewgenius/agent/core/think/prompt/PromptTemplate.java
+index 1408665..e7fca5d 100644
+--- a/src/main/java/com/reviewgenius/agent/core/think/prompt/PromptTemplate.java
++++ b/src/main/java/com/reviewgenius/agent/core/think/prompt/PromptTemplate.java
+@@ -81,59 +81,60 @@ public enum PromptTemplate {
+
+                      Code Diff:
+                      %s
+-              """), REVIEW_PROMPT_V3(
+-              PromptVersion.REVIEW_V3,
+-              """
+-                  You are a principal engineer performing an enterprise-grade code review.
+-
+-                        Review the following code diff with deep attention to correctness, reliability, distributed systems behavior, scalability, observability, security, caching, thread safety, resource handling, and API design.
+-
+-                        Focus Area:
+-                        %s
+-
+-                        Critical Instructions:
+-                        - Report ONLY highly confident and meaningful issues
+-                        - Do NOT invent hypothetical problems without evidence in the diff
+-                        - Ignore formatting, code style, and subjective preferences
+-                        - Prefer precision over quantity
+-                        - Suggestions must be concise, technical, and directly actionable
+-                        - Avoid duplicate findings
+-                        - Return ONLY raw JSON
+-                        - Do NOT wrap response in markdown
+-                        - Do NOT use ```json
+-                        - Do NOT add explanation text outside JSON
+-
+-                        Special Attention Areas:
+-                        - Null safety
+-                        - Thread safety
+-                        - Resource leaks
+-                        - Cache misuse
+-                        - API contract violations
+-                        - Error handling
+-                        - Retry risks
+-                        - Transaction boundaries
+-                        - Performance bottlenecks
+-                        - Security vulnerabilities
+-
+-                        Return ONLY valid JSON array:
+-                        [
+-                          {
+-                            "fileName": "",
+-                            "lineNumber": 0,
+-                            "severity": "LOW|MEDIUM|HIGH",
+-                            "description": "",
+-                            "suggestion": ""
+-                          }
+-                        ]
+-
+-                        If no meaningful issues are found return:
+-                        []
+-
+-                        Code Diff:
+-                        %s
+-                  """);
++              """),
+
+-  private final PromptVersion version;
++  REVIEW_PROMPT_V3(
++      PromptVersion.REVIEW_V3,
++      """
++          You are a principal engineer performing an enterprise-grade code review.
++
++                Review the following code diff with deep attention to correctness, reliability, distributed systems behavior, scalability, observability, security, caching, thread safety, resource handling, and API design.
++
++                Focus Area:
++                %s
++
++                Critical Instructions:
++                - Report ONLY highly confident and meaningful issues
++                - Do NOT invent hypothetical problems without evidence in the diff
++                - Ignore formatting, code style, and subjective preferences
++                - Prefer precision over quantity
++                - Suggestions must be concise, technical, and directly actionable
++                - Avoid duplicate findings
++                - Return ONLY raw JSON
++                - Do NOT wrap response in markdown
++                - Do NOT use ```json
++                - Do NOT add explanation text outside JSON
++
++                Special Attention Areas:
++                - Null safety
++                - Thread safety
++                - Resource leaks
++                - Cache misuse
++                - API contract violations
++                - Error handling
++                - Retry risks
++                - Transaction boundaries
++                - Performance bottlenecks
++                - Security vulnerabilities
++
++                Return ONLY valid JSON array:
++                [
++                  {
++                    "fileName": "",
++                    "lineNumber": 0,
++                    "severity": "LOW|MEDIUM|HIGH",
++                    "description": "",
++                    "suggestion": ""
++                  }
++                ]
++
++                If no meaningful issues are found return:
++                []
++
++                Code Diff:
++                %s
++          """);
+
++  private final PromptVersion version;
+   private final String template;
+ }
+diff --git a/src/main/java/com/reviewgenius/agent/enums/ActionType.java b/src/main/java/com/reviewgenius/agent/enums/ActionType.java
+index f567510..c953e2a 100644
+--- a/src/main/java/com/reviewgenius/agent/enums/ActionType.java
++++ b/src/main/java/com/reviewgenius/agent/enums/ActionType.java
+@@ -1,5 +1,12 @@
+ package com.reviewgenius.agent.enums;
+
++import lombok.*;
++
++@Getter
++@NoArgsConstructor
++@AllArgsConstructor
+ public enum ActionType {
+-  FETCH_PR, PARSE_DIFF, ANALYZE_CODE, GENERATE_REVIEW, DONE
++  FETCH_PR(false), PARSE_DIFF(false), ANALYZE_CODE(true), GENERATE_REVIEW(false), DONE(false);
++
++  private boolean isActionTypeRetryAble;
+ }
+diff --git a/src/main/java/com/reviewgenius/agent/model/AgentContext.java b/src/main/java/com/reviewgenius/agent/model/AgentContext.java
+index 3995b2d..b551ead 100644
+--- a/src/main/java/com/reviewgenius/agent/model/AgentContext.java
++++ b/src/main/java/com/reviewgenius/agent/model/AgentContext.java
+@@ -1,6 +1,7 @@
+ package com.reviewgenius.agent.model;
+
+ import com.reviewgenius.agent.core.think.prompt.PromptVersion;
++import com.reviewgenius.agent.enums.ActionType;
+ import com.reviewgenius.agent.observability.execution.ActionExecutionHistory;
+ import lombok.AllArgsConstructor;
+ import lombok.Builder;
+@@ -14,10 +15,11 @@
+ @AllArgsConstructor
+ @NoArgsConstructor
+ @Builder
++// TODO create small small public static inner classes inside this class for better organization of related fields, e.g.
++// DiffInfo, AnalysisInfo, etc.
+ public class AgentContext {
+   private ReviewRequestDto inputDto;
+   List<Issue> issues;
+-  Map<String, Object> metadata;
+   private String rawDiff;
+   private String parsedDiff;
+   private String analysis;
+@@ -26,4 +28,5 @@ public class AgentContext {
+   private String correlationId;
+   private PromptVersion promptVersion;
+   private List<ActionExecutionHistory> executionHistories;
++  private Map<ActionType, Integer> retryCounts;
+ }
+\ No newline at end of file
+diff --git a/src/main/java/com/reviewgenius/agent/orchestrator/AgentOrchestrator.java b/src/main/java/com/reviewgenius/agent/orchestrator/AgentOrchestrator.java
+index 27f0261..37919f4 100644
+--- a/src/main/java/com/reviewgenius/agent/orchestrator/AgentOrchestrator.java
++++ b/src/main/java/com/reviewgenius/agent/orchestrator/AgentOrchestrator.java
+@@ -4,6 +4,8 @@
+ import com.reviewgenius.agent.core.act.ActionResult;
+ import com.reviewgenius.agent.core.act.ActionResultStatus;
+ import com.reviewgenius.agent.core.reflect.ReflectionEngine;
++import com.reviewgenius.agent.core.retry.RetryDecision;
++import com.reviewgenius.agent.core.retry.RetryEngine;
+ import com.reviewgenius.agent.core.think.ThinkEngine;
+ import com.reviewgenius.agent.enums.ActionType;
+ import com.reviewgenius.agent.enums.ReflectionDecision;
+@@ -18,6 +20,7 @@
+ import org.springframework.stereotype.Component;
+
+ import java.util.ArrayList;
++import java.util.HashMap;
+
+ @Component
+ @Slf4j
+@@ -29,13 +32,15 @@ public class AgentOrchestrator {
+   private final ActionExecutor actionExecutor;
+   private final ReflectionEngine reflectionEngine;
+   private final ReflectionLogger reflectionLogger;
++  private final RetryEngine retryEngine;
+
+   public AgentOrchestrator(ThinkEngine thinkEngine, ActionExecutor actionExecutor, ReflectionEngine reflectionEngine,
+-      ReflectionLogger reflectionLogger) {
++      ReflectionLogger reflectionLogger, RetryEngine retryEngine) {
+     this.thinkEngine = thinkEngine;
+     this.actionExecutor = actionExecutor;
+     this.reflectionEngine = reflectionEngine;
+     this.reflectionLogger = reflectionLogger;
++    this.retryEngine = retryEngine;
+   }
+
+   public AgentExecutionResult runAgent(ReviewRequestDto input, boolean debug) {
+@@ -47,27 +52,46 @@ public AgentExecutionResult runAgent(ReviewRequestDto input, boolean debug) {
+   }
+
+   private void executeSteps(AgentContext context) {
++    // TODO: implement it as while (!context.isCompleted()) using do while loop
++    /*
++     * while (!completed) { action = think() do { execute reflect } while(retry) }
++     */
+     for (int step = 0; step < maxSteps; step++) {
+
+       ActionType actionType = thinkEngine.think(context);
++
+       ActionResult<?> result = actionExecutor.act(actionType, context);
++
+       ReflectionResult reflectionResult = reflectionEngine.reflect(actionType, result, context);
+       reflectionLogger.logReflection(actionType, reflectionResult);
++      RetryDecision retryDecision = retryEngine.evaluateRetry(actionType, reflectionResult, context);
+
+-      if (shouldBreak(context, result, reflectionResult))
++      /*
++       * if (retryDecision == RetryDecision.RETRY_ALLOWED) { log.info("Retrying action={}", actionType); step--;
++       * continue; }
++       */
++
++      if (shouldBreak(context, result, reflectionResult)) {
+         break;
++      }
+     }
+   }
+
+   private static boolean shouldBreak(AgentContext context, ActionResult<?> result, ReflectionResult reflectionResult) {
+-    return result.getStatus() == ActionResultStatus.FAILURE
++    boolean shouldBreak = result.getStatus() == ActionResultStatus.FAILURE
+         || context.isCompleted()
+         || reflectionResult.getDecision() == ReflectionDecision.FAIL;
++    if (shouldBreak) {
++      log.info("Breaking execution loop. ActionResult status: {}, Reflection decision: {}, Context completed: {}",
++          result.getStatus(), reflectionResult.getDecision(), context.isCompleted());
++    }
++    return shouldBreak;
+   }
+
+   private static AgentContext buildContext(ReviewRequestDto input) {
+     return AgentContext.builder()
+         .executionHistories(new ArrayList<>())
++        .retryCounts(new HashMap<>())
+         .inputDto(input)
+         .correlationId(TraceContext.getCorrelationId())
+         .completed(false)
+diff --git a/src/main/java/com/reviewgenius/agent/util/CommonUtil.java b/src/main/java/com/reviewgenius/agent/util/CommonUtil.java
+index c64c5d7..4843608 100644
+--- a/src/main/java/com/reviewgenius/agent/util/CommonUtil.java
++++ b/src/main/java/com/reviewgenius/agent/util/CommonUtil.java
+@@ -13,6 +13,7 @@ public static String getMockResponse(String fileName) {
+       log.info("Loading dummy response from file: {}", fileName);
+       return new String(new ClassPathResource(fileName).getInputStream().readAllBytes());
+     } catch (IOException ex) {
++      log.error("Failed to load dummy response from file: {}", fileName, ex);
+       throw new RuntimeException("Failed to load dummy LLM response", ex);
+     }
+   }
+diff --git a/src/main/java/com/reviewgenius/agent/util/IssueParserUtil.java b/src/main/java/com/reviewgenius/agent/util/IssueParserUtil.java
+index 5a4fee3..3fca20d 100644
+--- a/src/main/java/com/reviewgenius/agent/util/IssueParserUtil.java
++++ b/src/main/java/com/reviewgenius/agent/util/IssueParserUtil.java
+@@ -10,8 +10,7 @@ public class IssueParserUtil {
+   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+   public static List<Issue> parseIssues(String json) {
+     try {
+-      String cleanedJson = cleanJson(json);
+-      return OBJECT_MAPPER.readValue(cleanedJson, new TypeReference<List<Issue>>() {
++      return OBJECT_MAPPER.readValue(cleanJson(json), new TypeReference<List<Issue>>() {
+       });
+     } catch (Exception ex) {
+       throw new RuntimeException("Failed to parse LLM response", ex);
+diff --git a/src/main/resources/application.yaml b/src/main/resources/application.yaml
+index e50a99a..dcce72a 100644
+--- a/src/main/resources/application.yaml
++++ b/src/main/resources/application.yaml
+@@ -27,6 +27,8 @@ logging:
+
+ agent:
+   maxSteps: 5
++  retry:
++    maxRetries: 2
+   llm:
+     client:
+       disabled: true

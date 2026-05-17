@@ -19,7 +19,7 @@ public class ThinkEngine {
       return PARSE_DIFF;
     }
 
-    if (context.getAnalysis() == null) {
+    if (CollectionUtils.isEmpty(context.getAnalysis())) {
       return ANALYZE_CODE;
     }
 

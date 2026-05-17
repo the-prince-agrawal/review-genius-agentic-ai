@@ -18,12 +18,14 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ReflectionResult {
   private boolean passed;
-  private boolean retryRecommended;
-  private double confidenceScore;
+  private Boolean retryRecommended;
+  private Double confidenceScore;
   private String reflectionSummary;
   private List<String> detectedProblems = new ArrayList<>();
   private ReflectionDecision decision;
   private ReflectionType reflectionType;
+  private String reflectionEngine;
+  private Long totalExecutionTimeMs;
 
   public void addProblem(String problem) {
     this.detectedProblems.add(problem);

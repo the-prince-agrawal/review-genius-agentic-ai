@@ -5,6 +5,9 @@ import com.reviewgenius.agent.model.DiffFile;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.reviewgenius.agent.Constants.LINE_SEPARATOR;
+import static com.reviewgenius.agent.Constants.NEW_LINE;
+
 public class DiffParserUtil {
 
   public static String parse(String diff) {
@@ -88,7 +91,7 @@ public class DiffParserUtil {
         }
       }
 
-      sb.append("\n----------------------\n");
+      sb.append(NEW_LINE + LINE_SEPARATOR + NEW_LINE);
     }
 
     return sb.toString();
