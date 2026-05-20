@@ -93,8 +93,9 @@ public enum ThinkEnginePromptTemplate {
           [
             {
               "fileName": "",
-              "lineNumber": 0,
-              "severity": "LOW|MEDIUM|HIGH",
+              "lineNumber": 42,
+              "side": "RIGHT or LEFT",
+              "severity": "LOW or MEDIUM or HIGH",
               "description": "",
               "suggestion": ""
             }
@@ -104,6 +105,13 @@ public enum ThinkEnginePromptTemplate {
           - Return [] if no meaningful issues exist
           - Prefer fewer strong findings over many weak findings
           - Do NOT force findings
+          - lineNumber must reference actual changed diff line
+          - side must be:
+              - RIGHT for added lines (+)
+              - LEFT for removed lines (-)
+          - NEVER use lineNumber 0
+          - ONLY report issues for actual changed lines
+
 
           Code Diff:
           %s
@@ -185,8 +193,9 @@ public enum ThinkEnginePromptTemplate {
           [
             {
               "fileName": "",
-              "lineNumber": 0,
-              "severity": "LOW|MEDIUM|HIGH",
+              "lineNumber": 17,
+              "side": "RIGHT or LEFT",
+              "severity": "LOW or MEDIUM or HIGH",
               "description": "",
               "suggestion": ""
             }
@@ -196,6 +205,12 @@ public enum ThinkEnginePromptTemplate {
           - Return [] if no meaningful issues exist
           - High-confidence findings ONLY
           - Do NOT force findings
+          - lineNumber must reference actual changed diff line
+          - side must be:
+              - RIGHT for added lines (+)
+              - LEFT for removed lines (-)
+          - NEVER use lineNumber 0
+          - ONLY report issues for actual changed lines
 
           Code Diff:
           %s
@@ -272,8 +287,9 @@ public enum ThinkEnginePromptTemplate {
           [
             {
               "fileName": "",
-              "lineNumber": 0,
-              "severity": "LOW|MEDIUM|HIGH",
+              "lineNumber": 25,
+              "side": "RIGHT or LEFT",
+              "severity": "LOW or MEDIUM or HIGH",
               "description": "",
               "suggestion": ""
             }
@@ -283,6 +299,12 @@ public enum ThinkEnginePromptTemplate {
           - EMPTY ARRAY [] is acceptable
           - Do NOT force findings
           - Only meaningful engineering concerns are allowed
+          - lineNumber must reference actual changed diff line
+          - side must be:
+              - RIGHT for added lines (+)
+              - LEFT for removed lines (-)
+          - NEVER use lineNumber 0
+          - ONLY report issues for actual changed lines
 
           Code Diff:
           %s

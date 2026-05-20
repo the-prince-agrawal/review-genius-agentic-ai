@@ -10,9 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class AnalyzeCodeRuleBasedReflectionEngine
@@ -34,29 +32,39 @@ public class AnalyzeCodeRuleBasedReflectionEngine
 
   private void validateAnalyzeCode(AgentContext context, ReflectionResult reflectionResult) {
     List<Issue> issues = context.getIssues();
+
     if (CollectionUtils.isEmpty(issues)) {
       reflectionResult.addProblem("Issues list is null or empty");
       return;
     }
 
-    Set<String> duplicateCheckSet = new HashSet<>();
     for (Issue issue : issues) {
       if (!StringUtils.hasText(issue.getFileName())) {
         reflectionResult.addProblem("Issue contains empty fileName");
-      }
-
-      if (issue.getLineNumber() <= 0) {
-        reflectionResult.addProblem("Invalid line number detected");
       }
 
       if (issue.getSeverity() == null) {
         reflectionResult.addProblem("Severity is missing");
       }
 
-      String issueKey = issue.getFileName() + "-" + issue.getLineNumber() + "-" + issue.getDescription();
+      if (!StringUtils.hasText(issue.getDescription())) {
+        reflectionResult.addProblem("Issue description is missing");
+      }
 
-      if (!duplicateCheckSet.add(issueKey)) {
-        reflectionResult.addProblem("Duplicate issue detected");
+      if (!StringUtils.hasText(issue.getSuggestion())) {
+        reflectionResult.addProblem("Issue suggestion is missing");
+      }
+
+      if (issue.getLineNumber() == null || issue.getLineNumber() <= 0) {
+        reflectionResult.addProblem("Issue lineNumber is invalid");
+      }
+
+      if (issue.getSide() == null) {
+        reflectionResult.addProblem("Issue diff side is missing");
+      }
+
+      if (!StringUtils.hasText(issue.getFileName()) || issue.getFileName().contains("..")) {
+        reflectionResult.addProblem("Issue contains invalid fileName");
       }
     }
   }

@@ -2,12 +2,14 @@ package com.reviewgenius.agent.orchestrator;
 
 import com.reviewgenius.agent.core.act.ActionResultStatus;
 import com.reviewgenius.agent.model.AgentContext;
+import com.reviewgenius.agent.model.PullRequestMetadata;
 import com.reviewgenius.agent.model.ReviewRequestDto;
 import com.reviewgenius.agent.observability.execution.AgentExecutionResult;
 import com.reviewgenius.agent.observability.trace.TraceContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class OrchestratorMapper {
   public static AgentContext buildContext(ReviewRequestDto input) {
@@ -15,10 +17,12 @@ public class OrchestratorMapper {
         .executionHistories(new ArrayList<>())
         .retryCounts(new HashMap<>())
         .inputDto(input)
-        .analysis(new ArrayList<>())
+        .analysis(new CopyOnWriteArrayList<>())
         .correlationId(TraceContext.getCorrelationId())
         .completed(false)
         .workflowFailed(false)
+        .pullRequestMetadata(PullRequestMetadata.builder().prUrl(input.getPrURL()).build())
+        .prCommentsAdded(false)
         .build();
   }
 

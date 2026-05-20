@@ -4,10 +4,13 @@ import com.reviewgenius.agent.core.act.ActionHandler;
 import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
+import com.reviewgenius.agent.model.DiffFile;
 import com.reviewgenius.agent.util.DiffParserUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 import static com.reviewgenius.agent.enums.ActionType.PARSE_DIFF;
 
@@ -17,7 +20,8 @@ public class ParseDiffHandler implements ActionHandler {
   @Override
   public ActionResult<String> execute(AgentContext context) {
     try {
-      String parsedDiff = DiffParserUtil.parse(context.getRawDiff());
+      List<DiffFile> diffFiles = DiffParserUtil.parse(context.getRawDiff());
+      String parsedDiff = DiffParserUtil.format(diffFiles);
       validateParsedDiff(parsedDiff);
       context.setParsedDiff(parsedDiff);
       return ActionResult.success("Diff parsed successfully", parsedDiff);

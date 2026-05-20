@@ -30,6 +30,7 @@ agent:
     maxRetries: 2
   analysis:
     chunk-size: 2000
+    chunk-analysis-timeout-seconds: 160
   llm:
     client:
       analyze-code:

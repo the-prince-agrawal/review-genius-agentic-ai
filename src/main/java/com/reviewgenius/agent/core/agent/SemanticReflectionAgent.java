@@ -24,7 +24,7 @@ public class SemanticReflectionAgent {
 
   private final LLMClient llmClient;
   private final ReflectEnginePromptBuilder promptBuilder;
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper;
 
   public ReflectionAIResponse getReflectionResult(ActionType actionType, AgentContext context)
       throws JsonProcessingException {
