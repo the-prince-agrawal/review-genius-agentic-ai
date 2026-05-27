@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import static com.reviewgenius.agent.enums.ActionType.FETCH_PR;
+import static com.reviewgenius.agent.enums.ActionType.FETCH_PR_DIFF;
 
 @Service
 @Slf4j
@@ -43,6 +43,6 @@ public class FetchPRHandler implements ActionHandler {
 
   @Override
   public ActionType getType() {
-    return FETCH_PR;
+    return FETCH_PR_DIFF;
   }
 }

@@ -1,5 +1,6 @@
 package com.reviewgenius.agent.util;
 
+import com.reviewgenius.agent.model.Issue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 
@@ -26,5 +27,19 @@ public class CommonUtil {
       log.error("Failed to load dummy response from file: {}", fileName, ex);
       throw new RuntimeException("Failed to load dummy LLM response", ex);
     }
+  }
+
+  public static String buildCommentBody(Issue issue) {
+    return """
+        Severity: %s
+
+        %s
+
+        Suggestion:
+        %s
+        """.formatted(
+        issue.getSeverity(),
+        issue.getDescription(),
+        issue.getSuggestion());
   }
 }

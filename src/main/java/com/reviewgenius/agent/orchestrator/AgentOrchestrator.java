@@ -93,7 +93,7 @@ public class AgentOrchestrator {
 
   private boolean shouldStopWorkflow(ReflectionResult reflectionResult, RetryDecision retryDecision) {
     // retry exhausted so stop the complete workflow and exit.
-    //TODO fix this correctly
+    // TODO fix this correctly
     return reflectionResult != null
         && retryDecision == RetryDecision.RETRY_DENIED
         && (reflectionResult.getDecision() == ReflectionDecision.RETRY

@@ -6,7 +6,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public enum ActionType {
-  FETCH_PR(true), PARSE_DIFF(true), ANALYZE_CODE(true), GENERATE_REVIEW(false);
+  VALIDATE_PR_STATE(false), FETCH_PR_DIFF(true), PARSE_DIFF(true), ANALYZE_CODE(true), ADD_REVIEW_COMMENTS(
+      false), GENERATE_REVIEW(false);
 
   private boolean isActionTypeRetryAble;
 }

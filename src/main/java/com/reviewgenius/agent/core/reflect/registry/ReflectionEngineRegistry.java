@@ -22,9 +22,11 @@ public class ReflectionEngineRegistry {
   @PostConstruct
   public void init() {
     reflectionEngineMap = Map.of(
-        ActionType.FETCH_PR, List.of(general),
+        ActionType.VALIDATE_PR_STATE, List.of(general),
+        ActionType.FETCH_PR_DIFF, List.of(general),
         ActionType.PARSE_DIFF, List.of(general),
-        ActionType.ANALYZE_CODE, List.of(general, analyze, semantic));
+        ActionType.ANALYZE_CODE, List.of(general, analyze, semantic),
+        ActionType.ADD_REVIEW_COMMENTS, List.of(general)); // TODO add more reflection here
   }
 
   public List<ReflectionEngine> getReflectionEngines(ActionType actionType) {

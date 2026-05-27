@@ -23,7 +23,7 @@ logging:
 
 github:
   token: ${LOG_INTELLIGENCE_GITHUB_ACCESS_TOKEN_FOR_PR_REVIEW}
-  remoteFetchDisabled: true
+  remoteFetchDisabled: false
 
 agent:
   retry:
@@ -34,7 +34,7 @@ agent:
   llm:
     client:
       analyze-code:
-        disabled: true
+        disabled: false
       semantic-reflection:
-        disabled: true
+        disabled: false
 

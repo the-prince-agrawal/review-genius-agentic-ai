@@ -11,8 +11,12 @@ import static com.reviewgenius.agent.enums.ActionType.*;
 public class ThinkEngine {
   public ActionType think(AgentContext context) {
 
+    if (!context.isPRStateValidated()) {
+      return VALIDATE_PR_STATE;
+    }
+
     if (context.getRawDiff() == null) {
-      return FETCH_PR;
+      return FETCH_PR_DIFF;
     }
 
     if (context.getParsedDiff() == null) {
@@ -23,7 +27,11 @@ public class ThinkEngine {
       return ANALYZE_CODE;
     }
 
-    if (!CollectionUtils.isEmpty(context.getIssues())) {
+    if (!CollectionUtils.isEmpty(context.getIssues()) && !context.isPrCommentsAdded()) {
+      return ADD_REVIEW_COMMENTS;
+    }
+
+    if (context.isPrCommentsAdded()) {
       return GENERATE_REVIEW;
     }
 
