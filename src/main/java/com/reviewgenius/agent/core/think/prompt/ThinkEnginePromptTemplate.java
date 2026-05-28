@@ -88,6 +88,11 @@ public enum ThinkEnginePromptTemplate {
           - NO extra text after JSON
           - Output MUST start with '['
           - Output MUST end with ']'
+          - lineNumber MUST exactly match provided newLine or oldLine values from the diff
+          - NEVER invent, estimate, shift, or infer line numbers
+          - Use ONLY explicit line numbers present in the diff metadata
+          - RIGHT side findings MUST use newLine values
+          - LEFT side findings MUST use oldLine values
 
           REQUIRED RESPONSE FORMAT:
           [
@@ -188,6 +193,11 @@ public enum ThinkEnginePromptTemplate {
           - NO extra text after JSON
           - Output MUST start with '['
           - Output MUST end with ']'
+          - lineNumber MUST exactly match provided newLine or oldLine values from the diff
+          - NEVER invent, estimate, shift, or infer line numbers
+          - Use ONLY explicit line numbers present in the diff metadata
+          - RIGHT side findings MUST use newLine values
+          - LEFT side findings MUST use oldLine values
 
           REQUIRED RESPONSE FORMAT:
           [
@@ -282,6 +292,11 @@ public enum ThinkEnginePromptTemplate {
           - NO extra output
           - Output MUST start with '['
           - Output MUST end with ']'
+          - lineNumber MUST exactly match provided newLine or oldLine values from the diff
+          - NEVER invent, estimate, shift, or infer line numbers
+          - Use ONLY explicit line numbers present in the diff metadata
+          - RIGHT side findings MUST use newLine values
+          - LEFT side findings MUST use oldLine values
 
           REQUIRED RESPONSE FORMAT:
           [

@@ -17,7 +17,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Builder
 @Setter
-//TODO create small small public static inner classes inside this class for better organization of related fields, e.g.
+// TODO create small small public static inner classes inside this class for better organization of related fields, e.g.
 public class AgentContext {
   private ReviewRequestDto inputDto;
   private boolean isPRStateValidated;
