@@ -29,7 +29,7 @@ agent:
   retry:
     maxRetries: 2
   analysis:
-    chunk-size: 2000
+    chunk-size: 1500
     chunk-analysis-timeout-seconds: 160
   llm:
     client:

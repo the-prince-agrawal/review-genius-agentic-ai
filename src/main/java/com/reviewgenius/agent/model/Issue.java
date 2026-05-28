@@ -17,4 +17,5 @@ public class Issue {
   private IssueSeverity severity;
   private String description;
   private String suggestion;
+  private Integer diffPosition;
 }

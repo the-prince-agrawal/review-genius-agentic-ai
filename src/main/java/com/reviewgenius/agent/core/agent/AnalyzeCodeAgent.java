@@ -3,7 +3,10 @@ package com.reviewgenius.agent.core.agent;
 import com.reviewgenius.agent.core.think.LLMClient;
 import com.reviewgenius.agent.core.think.prompt.ThinkEnginePromptBuilder;
 import com.reviewgenius.agent.model.AgentContext;
+import com.reviewgenius.agent.model.DiffFile;
 import com.reviewgenius.agent.model.Issue;
+import com.reviewgenius.agent.service.IssuePositionResolver;
+import com.reviewgenius.agent.util.DiffParserUtil;
 import com.reviewgenius.agent.util.IssueParserUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,16 +41,18 @@ public class AnalyzeCodeAgent {
   private final ThinkEnginePromptBuilder thinkEnginePromptBuilder;
   private final Executor asyncExecutor;
   private final IssueParserUtil issueParserUtil;
+  private final IssuePositionResolver issuePositionResolver;
 
   public List<Issue> analyze(AgentContext context, String parsedDiff) {
     List<String> diffChunks = splitParsedDiffIntoChunks(parsedDiff, chunkSize);
     log.info("Starting parallel analysis. totalChunks={}", diffChunks.size());
     AtomicInteger counter = new AtomicInteger();
+    List<DiffFile> diffFiles = DiffParserUtil.parse(context.getRawDiff());
     List<CompletableFuture<List<Issue>>> futures = diffChunks
         .stream()
         .map(diffChunk -> {
           int chunkNumber = counter.incrementAndGet();
-          return analyzeChunkAsync(context, diffChunk, chunkNumber)
+          return analyzeChunkAsync(context, diffChunk, chunkNumber, diffFiles)
               .orTimeout(chunkAnalysisTimeoutSeconds, TimeUnit.SECONDS)
               .exceptionally(ex -> logErrorAndGetEmptyIssueList(ex, chunkNumber));
         }).toList();
@@ -63,12 +68,14 @@ public class AnalyzeCodeAgent {
     return List.of();
   }
 
-  private CompletableFuture<List<Issue>> analyzeChunkAsync(AgentContext context, String diffChunk, int chunkNumber) {
+  private CompletableFuture<List<Issue>> analyzeChunkAsync(AgentContext context, String diffChunk, int chunkNumber,
+      List<DiffFile> diffFiles) {
     return CompletableFuture.supplyAsync(() -> {
       String chunkPrompt = thinkEnginePromptBuilder.buildCodeReviewPrompt(context, diffChunk);
       log.debug("Sending chunk to LLM. chunkSize={}, chunkIndex={}", diffChunk.length(), chunkNumber);
       String analysisResult = callLLM(chunkPrompt);
       List<Issue> issues = issueParserUtil.parseIssues(analysisResult);
+      issuePositionResolver.resolveDiffPositions(issues, diffFiles);
       context.getAnalysis().add(analysisResult);
       return issues;
     }, asyncExecutor);

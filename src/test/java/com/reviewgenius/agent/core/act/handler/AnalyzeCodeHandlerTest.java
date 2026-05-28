@@ -45,13 +45,13 @@ class AnalyzeCodeHandlerTest {
     reviewRequestDto.setReviewType("review type");
     reviewRequestDto.setPrURL("PR_URL");
     return AgentContext.builder()
-            .inputDto(reviewRequestDto)
-            .parsedDiff("PARSED_DIFF")
-            .completed(false)
-            .workflowFailed(false)
-            .prCommentsAdded(false)
-            .isPRStateValidated(false)
-            .build();
+        .inputDto(reviewRequestDto)
+        .parsedDiff("PARSED_DIFF")
+        .completed(false)
+        .workflowFailed(false)
+        .prCommentsAdded(false)
+        .isPRStateValidated(false)
+        .build();
   }
 
   private String getAnalysisResult() {

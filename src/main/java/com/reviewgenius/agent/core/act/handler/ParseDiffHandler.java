@@ -5,6 +5,8 @@ import com.reviewgenius.agent.core.act.ActionResult;
 import com.reviewgenius.agent.enums.ActionType;
 import com.reviewgenius.agent.model.AgentContext;
 import com.reviewgenius.agent.model.DiffFile;
+import com.reviewgenius.agent.model.DiffHunk;
+import com.reviewgenius.agent.model.DiffLine;
 import com.reviewgenius.agent.util.DiffParserUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,12 +19,14 @@ import static com.reviewgenius.agent.enums.ActionType.PARSE_DIFF;
 @Service
 @Slf4j
 public class ParseDiffHandler implements ActionHandler {
+
   @Override
   public ActionResult<String> execute(AgentContext context) {
+
     try {
       List<DiffFile> diffFiles = DiffParserUtil.parse(context.getRawDiff());
+      validateParsedDiff(diffFiles);
       String parsedDiff = DiffParserUtil.format(diffFiles);
-      validateParsedDiff(parsedDiff);
       context.setParsedDiff(parsedDiff);
       return ActionResult.success("Diff parsed successfully", parsedDiff);
     } catch (Exception ex) {
@@ -31,46 +35,31 @@ public class ParseDiffHandler implements ActionHandler {
     }
   }
 
-  private void validateParsedDiff(String parsedDiff) {
-    if (!StringUtils.hasText(parsedDiff)) {
-      throw new IllegalStateException("Parsed diff is empty");
+  private void validateParsedDiff(List<DiffFile> diffFiles) {
+    if (diffFiles == null || diffFiles.isEmpty()) {
+      throw new IllegalStateException("No diff files found");
     }
 
-    String normalized = parsedDiff.trim();
-    // Detect placeholder / useless formatted output
-    if ("----------------------".equals(normalized)) {
-      throw new IllegalStateException("Parsed diff does not contain meaningful content");
-    }
+    boolean hasActualChanges = false;
+    for (DiffFile file : diffFiles) {
+      if (!StringUtils.hasText(file.getFileName())) {
+        continue;
+      }
 
-    boolean hasFile = normalized.contains("File:");
-    boolean hasAdded = normalized.contains("Added:");
-    boolean hasRemoved = normalized.contains("Removed:");
-
-    // Must contain at least one file
-    if (!hasFile) {
-      throw new IllegalStateException(
-          "No files detected in parsed diff");
-    }
-
-    // Must contain actual code changes
-    if (!hasAdded && !hasRemoved) {
-      throw new IllegalStateException(
-          "No code changes detected in parsed diff");
-    }
-
-    String[] lines = normalized.split("\n");
-    boolean hasActualContent = false;
-
-    for (String line : lines) {
-      String trimmed = line.trim();
-      if (trimmed.startsWith("- ") && trimmed.length() > 2) {
-        hasActualContent = true;
-        break;
+      for (DiffHunk hunk : file.getHunks()) {
+        for (DiffLine line : hunk.getLines()) {
+          if ("ADDED".equals(line.getType()) || "REMOVED".equals(line.getType())) {
+            hasActualChanges = true;
+            if (line.getDiffPosition() == null) {
+              throw new IllegalStateException("Diff position missing");
+            }
+          }
+        }
       }
     }
 
-    if (!hasActualContent) {
-      throw new IllegalStateException("Parsed diff contains no meaningful code lines");
+    if (!hasActualChanges) {
+      throw new IllegalStateException("No actual code changes found");
     }
   }
 

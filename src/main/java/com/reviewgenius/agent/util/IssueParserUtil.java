@@ -9,7 +9,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import static com.reviewgenius.agent.Constants.LINE_SEPARATOR;
 import static com.reviewgenius.agent.Constants.NEW_LINE;
@@ -39,19 +38,22 @@ public class IssueParserUtil {
   }
 
   public static List<String> splitParsedDiffIntoChunks(String parsedDiff, int chunkSize) {
-    final String FILE_SEPARATOR = NEW_LINE + LINE_SEPARATOR;
-
     List<String> chunks = new ArrayList<>();
-    String[] fileSections = parsedDiff.split(Pattern.quote(FILE_SEPARATOR));
+    if (!StringUtils.hasText(parsedDiff)) {
+      return chunks;
+    }
+    if (chunkSize <= 0) {
+      throw new IllegalArgumentException("Chunk size must be greater than zero");
+    }
+
+    String[] sections = parsedDiff.split("(?=File: )");
     StringBuilder currentChunk = new StringBuilder();
-    for (String section : fileSections) {
+    for (String section : sections) {
       if (!StringUtils.hasText(section)) {
         continue;
       }
-      String formattedSection = section.strip() + NEW_LINE + LINE_SEPARATOR + NEW_LINE;
-      /*
-       * Single file itself exceeds chunk size
-       */
+
+      String formattedSection = section.trim() + NEW_LINE + LINE_SEPARATOR + NEW_LINE;
       if (formattedSection.length() > chunkSize) {
         if (currentChunk.length() > 0) {
           chunks.add(currentChunk.toString().trim());
@@ -60,26 +62,15 @@ public class IssueParserUtil {
         chunks.add(formattedSection.trim());
         continue;
       }
-
-      /*
-       * Current chunk overflow
-       */
       if (currentChunk.length() + formattedSection.length() > chunkSize) {
-        if (currentChunk.length() > 0) {
-          chunks.add(currentChunk.toString().trim());
-          currentChunk = new StringBuilder();
-        }
+        chunks.add(currentChunk.toString().trim());
+        currentChunk = new StringBuilder();
       }
       currentChunk.append(formattedSection);
     }
-
-    /*
-     * Remaining chunk
-     */
     if (currentChunk.length() > 0) {
       chunks.add(currentChunk.toString().trim());
     }
-
     return chunks;
   }
 }

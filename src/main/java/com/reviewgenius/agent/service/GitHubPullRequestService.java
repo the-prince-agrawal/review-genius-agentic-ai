@@ -23,7 +23,6 @@ public class GitHubPullRequestService {
   private static final String PR_API_PATH = "/repos/{owner}/{repo}/pulls/{pullNumber}";
 
   private static final String REVIEW_API_PATH = "/repos/{owner}/{repo}/pulls/{pullNumber}/reviews";
-  private static final String DEFAULT_REVIEW_SIDE = "RIGHT";
 
   private final GitHubApiClient gitHubApiClient;
 
@@ -35,24 +34,32 @@ public class GitHubPullRequestService {
 
   public void addReviewComments(String prUrl, String commitId, List<Issue> issues) {
     PullRequestMetadata metadata = extractPrMetadata(prUrl);
-    String reviewApiUrl = buildApiUrl(REVIEW_API_PATH, metadata.getOwner(), metadata.getRepo(),
+    List<ExistingReviewComment> existingComments = fetchExistingReviewComments(metadata);
+    String reviewApiUrl = buildApiUrl(
+        REVIEW_API_PATH,
+        metadata.getOwner(),
+        metadata.getRepo(),
         metadata.getPullRequestNumber());
 
-    List<ExistingReviewComment> existingComments = fetchExistingReviewComments(metadata);
     List<Map<String, Object>> comments = issues.stream()
-        .distinct().filter(issue -> !isDuplicateComment(issue, existingComments))
-        .map(this::buildComment).toList();
+        .distinct()
+        .filter(issue -> !isDuplicateComment(issue, existingComments))
+        .filter(issue -> issue.getDiffPosition() != null)
+        .map(this::buildComment)
+        .toList();
 
     if (comments.isEmpty()) {
       log.info("No new review comments to add. prUrl={}", prUrl);
       return;
     }
+    gitHubApiClient.addReviewComments(prUrl, getPayload(commitId, comments), reviewApiUrl);
+  }
 
-    Map<String, Object> payload = Map.of(
+  private Map<String, Object> getPayload(String commitId, List<Map<String, Object>> comments) {
+    return Map.of(
         "commit_id", commitId,
         "event", "COMMENT",
         "comments", comments);
-    gitHubApiClient.addReviewComments(prUrl, payload, reviewApiUrl);
   }
 
   public boolean isPullRequestOpen(String prUrl) {
@@ -80,24 +87,29 @@ public class GitHubPullRequestService {
   }
 
   private boolean isDuplicateComment(Issue issue, List<ExistingReviewComment> existingComments) {
-    String newCommentBody = buildCommentBody(issue);
-    return existingComments.stream()
+    return existingComments
+        .stream()
         .anyMatch(existing -> Objects.equals(existing.getPath(), issue.getFileName())
-            && Objects.equals(existing.getLine(), issue.getLineNumber())
-            && Objects.equals(existing.getBody(), newCommentBody));
+            && Objects.equals(existing.getLine(), issue.getLineNumber()));
   }
 
   private Map<String, Object> buildComment(Issue issue) {
+    if (issue.getDiffPosition() == null) {
+      throw new IllegalStateException(
+          "Missing diff position for issue");
+    }
     return Map.of(
         "path", issue.getFileName(),
-        "line", issue.getLineNumber(),
-        "side", resolveReviewSide(issue),
+        // "line", issue.getLineNumber(),
+        // "side", resolveReviewSide(issue),
+        "position", issue.getDiffPosition(),
         "body", buildCommentBody(issue));
   }
 
-  private String resolveReviewSide(Issue issue) {
-    return Objects.nonNull(issue.getSide()) ? issue.getSide().name() : DEFAULT_REVIEW_SIDE;
-  }
+  /*
+   * private String resolveReviewSide(Issue issue) { return Objects.nonNull(issue.getSide()) ? issue.getSide().name() :
+   * DEFAULT_REVIEW_SIDE; }
+   */
 
   private String buildApiUrl(String path, String owner, String repo, Integer pullRequestNumber) {
     return UriComponentsBuilder
