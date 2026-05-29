@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Prince Agrawal
+ * All Rights Reserved.
+ */
+
 package com.reviewgenius.agent.model;
 
 import com.reviewgenius.agent.core.think.prompt.ThinkEnginePromptVersion;
@@ -17,7 +22,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Builder
 @Setter
-//TODO create small small public static inner classes inside this class for better organization of related field
+// TODO create small small public static inner classes inside this class for better organization of related field
 public class AgentContext {
   private ReviewRequestDto inputDto;
   private boolean isPRStateValidated;
