@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Prince Agrawal
+ * All Rights Reserved.
+ */
+
 package com.reviewgenius.agent.core.retry;
 
 import com.reviewgenius.agent.enums.ActionType;

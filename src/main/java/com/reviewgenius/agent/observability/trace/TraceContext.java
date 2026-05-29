@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Prince Agrawal
+ * All Rights Reserved.
+ */
+
 package com.reviewgenius.agent.observability.trace;
 
 import org.slf4j.MDC;

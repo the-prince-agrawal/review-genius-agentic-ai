@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Prince Agrawal
+ * All Rights Reserved.
+ */
+
 package com.reviewgenius.agent.core.think.prompt;
 
 import com.reviewgenius.agent.model.AgentContext;

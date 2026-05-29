@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Prince Agrawal
+ * All Rights Reserved.
+ */
+
 package com.reviewgenius.agent.observability.execution;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
